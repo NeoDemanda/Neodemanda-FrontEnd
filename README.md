@@ -1,80 +1,106 @@
-# NeoDemanda
+# NeoDemanda — Frontend
 
-Sistema de cálculo de demanda elétrica para múltiplas unidades consumidoras,
-desenvolvido para o Desafio Neoenergia Pernambuco.
+Frontend do projeto **NeoDemanda** (Grupo 2, Projeto 3 — CESAR School / Neoenergia
+Pernambuco). Interface para acompanhar projetos elétricos e a validação da
+demanda calculada em unidades consumidoras acima de 50 kVA.
 
-## Como rodar no servidor
+## Stack
+
+- **Vite** + **React 18**
+- **Tailwind CSS** (tokens do protótipo em `tailwind.config.js`: verde
+  institucional `#003D1A`, laranja `#F7941D`, fundo `#EBF0EC`)
+- **React Router** para Home, Dashboard, Cadastrar Projeto e Arquivados
+- **Axios** como cliente HTTP, já preparado para o backend Java
+- **Lucide React** para os ícones
+
+## Rodando localmente
 
 ```bash
 npm install
 npm run dev
 ```
 
-Isso abre um servidor local (Vite) com hot-reload. Para gerar a versão de
-produção:
+A aplicação sobe em `http://localhost:5173`.
+
+## Conectando com a API Java
+
+O frontend já está pronto para consumir uma API Java (ex: Spring Boot). Não é
+necessário alterar nenhum componente — basta:
+
+1. **Em desenvolvimento**: copie `.env.example` para `.env` e ajuste
+   `VITE_API_PROXY_TARGET` para o endereço onde o backend Java está rodando
+   (por padrão `http://localhost:8080`). O Vite faz o proxy de toda chamada
+   para `/api/**`, então não há problema de CORS em dev.
+
+2. **Em produção**: defina `VITE_API_BASE_URL` com a URL pública da API
+   (ex: `https://api.neodemanda.neoenergia.com.br`). O cliente em
+   `src/lib/api.js` monta a base automaticamente.
+
+Toda a lógica de chamadas fica centralizada em `src/lib/api.js`
+(`endpoints`) e `src/store/ProjectsContext.jsx`. Enquanto a API Java não
+estiver disponível, a aplicação cai automaticamente para os dados de exemplo
+(`src/data/mockProjects.js`), mostra um aviso na tela e mantém cadastro,
+arquivamento e restauração funcionando em memória — o suficiente para
+demonstrar o fluxo completo.
+
+### Contrato sugerido para o backend Spring Boot
+
+```
+GET    /api/projetos                 -> lista de projetos
+GET    /api/projetos/{id}            -> detalhe de um projeto
+POST   /api/projetos                 -> cria um projeto (rascunho)
+PUT    /api/projetos/{id}            -> atualiza um projeto
+DELETE /api/projetos/{id}            -> remove um projeto
+POST   /api/projetos/{id}/calcular   -> executa o motor de cálculo de demanda
+GET    /api/dashboard/resumo         -> contadores para os cards do topo
+```
+
+Formato de um projeto (JSON):
+
+```json
+{
+  "id": "cond-americas",
+  "nome": "Condomínio Solar das Américas",
+  "endereco": "Av. das Américas, 3500 — Barra da Tijuca, RJ",
+  "status": "validado",
+  "demandaCalculada": 87.4,
+  "demandaContratada": 150,
+  "tipoLigacao": "trifasico",
+  "fatorPotencia": 0.92,
+  "unidades": 48,
+  "protocolo": "NEO-2026-0418",
+  "atualizadoEm": "2026-08-24",
+  "arquivado": false
+}
+```
+
+Valores válidos de `status`: `rascunho`, `em_analise`, `validado`,
+`inconsistente`, `submetido`, `arquivado`. Valores de `tipoLigacao`:
+`monofasico`, `bifasico`, `trifasico` (ver `src/data/mockProjects.js`).
+
+## Estrutura de pastas
+
+```
+src/
+  components/    Navbar, PageBanner, ProjectCard, DemandGauge, StatusBadge, Footer
+  pages/         Home, Dashboard, NewProject, Archived
+  store/         ProjectsContext — estado dos projetos com fallback local
+  lib/           cliente axios e mapa de endpoints
+  data/          dados de exemplo e metadados de status/ligação
+```
+
+## Rotas
+
+| Rota             | Tela                                         |
+| ---------------- | -------------------------------------------- |
+| `/`              | Home institucional                           |
+| `/dashboard`     | Listagem de projetos com filtros por status  |
+| `/novo-projeto`  | Formulário de cadastro (cria como rascunho)  |
+| `/arquivados`    | Tabela de projetos arquivados                |
+
+## Build
 
 ```bash
 npm run build
 npm run preview
 ```
-
-## Arquitetura
-
-O projeto é HTML/CSS/JavaScript puro (sem framework), organizado com **Vite**
-como bundler/dev-server e módulos ES (`import`/`export`) em vez de scripts
-soltos no `<script>`.
-
-Existem 3 páginas HTML (entradas do Vite), cada uma carregando seu próprio
-"entry point" em `src/main-*.js`:
-
-- `index.html` → landing institucional (`src/main-landing.js`)
-- `login.html` → tela de acesso (`src/main-login.js`)
-- `app.html` → shell da aplicação, com 4 sub-views internas
-  (dashboard, entrada de dados, resultados, memorial) trocadas via JS
-  (`src/main-app.js` + `src/app-shell.js`)
-
-```
-src/
-  app-shell.js        # roteador das sub-views de app.html (switchView, init, logout)
-  main-app.js          # entry point de app.html (liga as funções ao window)
-  main-login.js        # entry point de login.html
-  main-landing.js       # entry point de index.html
-  pages/
-    dashboard/          # lógica da tela "Dashboard Inicial"
-    input-form/         # lógica da tela "Entrada de Dados"
-    results/             # lógica da tela "Resultados do Cálculo"
-    memorial/            # lógica da tela "Memorial Técnico"
-    login/               # lógica da tela de login
-    landing/             # lógica da landing page
-  components/
-    topbar.js            # barra superior (nome do projeto, status, progresso)
-  services/
-    calculations.js      # motor de cálculo de demanda (fatores de simultaneidade etc.)
-    exporters.js          # exportação em XML / CSV / impressão
-  state/
-    project.js            # estado global: projeto ativo + histórico (localStorage)
-  styles/
-    design-system.css     # tokens, cores, componentes base
-    landing.css / login.css / dashboard.css
-    main.css               # orquestrador (@import de tudo acima)
-public/
-  assets/logo_neoenergia.png
-```
-
-### Por que ficou assim
-
-- Cada página tem sua pasta própria em `src/pages/`, do mesmo jeito que no
-  projeto de referência (`pages/Dashboard`, `pages/Results` etc.), só que
-  cada uma exporta funções de renderização em vez de componentes `.jsx`.
-- `state/` guarda tudo que antes era variável global solta (`state.js`).
-- `services/` guarda regras de negócio puras (cálculo, exportação),
-  sem tocar no DOM diretamente.
-- `components/topbar.js` é a única peça de UI reaproveitada entre views.
-- Os `onclick="..."` do HTML continuam existindo (não migramos para React),
-  então cada `main-*.js` só importa as funções das páginas e as expõe no
-  `window` — é o "cabo" que liga o HTML antigo aos módulos novos.
-
-### O que NÃO mudou
-
-Toda a lógica de cálculo, as regras de negócio, os textos e o HTML/CSS visual
-são os mesmos do projeto original — só a organização dos arquivos mudou.
