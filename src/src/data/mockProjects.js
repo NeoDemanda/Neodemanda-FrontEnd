@@ -1,0 +1,107 @@
+// Dados de demonstração — usados enquanto a API Java não está disponível.
+// O formato espelha o que se espera do endpoint GET /api/projetos.
+
+export const mockProjects = [
+  {
+    id: "cond-americas",
+    nome: "Condomínio Solar das Américas",
+    endereco: "Av. das Américas, 3500 — Barra da Tijuca, RJ",
+    status: "validado",
+    demandaCalculada: 87.4,
+    demandaContratada: 150,
+    tipoLigacao: "trifasico",
+    fatorPotencia: 0.92,
+    unidades: 48,
+    protocolo: "NEO-2026-0418",
+    atualizadoEm: "2026-08-24",
+    arquivado: false,
+  },
+  {
+    id: "super-bompreco",
+    nome: "Supermercado BomPreço Méier",
+    endereco: "R. Dias da Cruz, 410 — Méier, RJ",
+    status: "em_analise",
+    demandaCalculada: 201.5,
+    demandaContratada: 300,
+    tipoLigacao: "trifasico",
+    fatorPotencia: 0.92,
+    unidades: 1,
+    protocolo: "NEO-2026-0355",
+    atualizadoEm: "2026-05-25",
+    arquivado: false,
+  },
+  {
+    id: "clinica-ortopedica",
+    nome: "Clínica Ortopédica Dr. Almeida",
+    endereco: "R. das Flores, 89 — Tijuca, RJ",
+    status: "inconsistente",
+    demandaCalculada: 52.3,
+    demandaContratada: 45,
+    tipoLigacao: "bifasico",
+    fatorPotencia: 0.88,
+    unidades: 1,
+    protocolo: null,
+    atualizadoEm: "2026-04-26",
+    arquivado: false,
+  },
+  {
+    id: "edificio-atlantico",
+    nome: "Edifício Corporativo Atlântico",
+    endereco: "Av. Rio Branco, 1500 — Centro, RJ",
+    status: "submetido",
+    demandaCalculada: 412.8,
+    demandaContratada: 500,
+    tipoLigacao: "trifasico",
+    fatorPotencia: 0.95,
+    unidades: 12,
+    protocolo: "NEO-2026-0502",
+    atualizadoEm: "2026-08-08",
+    arquivado: false,
+  },
+  {
+    id: "residencia-felipe",
+    nome: "Residência Felipe Monteiro",
+    endereco: "R. Maestro Paulo, 22 — Botafogo, RJ",
+    status: "rascunho",
+    demandaCalculada: null,
+    demandaContratada: 10,
+    tipoLigacao: "monofasico",
+    fatorPotencia: 0.92,
+    unidades: 1,
+    protocolo: null,
+    atualizadoEm: "2026-08-26",
+    arquivado: false,
+  },
+  {
+    id: "galpao-porto",
+    nome: "Galpão Logístico Porto Norte",
+    endereco: "Rod. BR-101, km 62 — Igarassu, PE",
+    status: "arquivado",
+    demandaCalculada: 318.6,
+    demandaContratada: 400,
+    tipoLigacao: "trifasico",
+    fatorPotencia: 0.92,
+    unidades: 4,
+    protocolo: "NEO-2025-1187",
+    atualizadoEm: "2026-02-11",
+    arquivado: true,
+  },
+];
+
+// Ordem em que os filtros aparecem no dashboard.
+export const statusOrder = ["rascunho", "em_analise", "validado", "inconsistente", "submetido"];
+
+export const statusMeta = {
+  rascunho: { label: "Rascunho", tone: "slate" },
+  em_analise: { label: "Em Análise", tone: "warn" },
+  validado: { label: "Validado", tone: "ok" },
+  inconsistente: { label: "Inconsistente", tone: "bad" },
+  submetido: { label: "Submetido", tone: "info" },
+  arquivado: { label: "Arquivado", tone: "slate" },
+};
+
+export const ligacaoMeta = {
+  monofasico: { label: "Monofásico", sigla: "1F", tone: "info" },
+  bifasico: { label: "Bifásico", sigla: "2F", tone: "info" },
+  trifasico: { label: "Trifásico", sigla: "3F", tone: "ok" },
+};
