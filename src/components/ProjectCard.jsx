@@ -1,4 +1,5 @@
-import { Archive, Trash2 } from "lucide-react";
+import { Archive, Download, Trash2 } from "lucide-react";
+import { exportProjectPdf } from "../services/pdfExportReact";
 import StatusBadge from "./StatusBadge";
 import DemandGauge from "./DemandGauge";
 import { ligacaoMeta } from "../data/mockProjects";
@@ -65,6 +66,18 @@ export default function ProjectCard({ project, onArchive, onDelete }) {
           <span className="mr-1 font-mono text-[11px] text-ink-faint">
             {dataBR(project.atualizadoEm)}
           </span>
+          {calculado && (
+            <button
+              type="button"
+              onClick={() => exportProjectPdf(project)}
+              title="Salvar memorial em PDF"
+              aria-label="Salvar memorial em PDF"
+              className="inline-flex items-center gap-1.5 rounded-md border border-brand-800/15 bg-white px-2 py-1.5 text-[11px] font-semibold text-brand-800 transition-colors hover:border-brand-800/30 hover:bg-brand-50"
+            >
+              <Download size={13} />
+              PDF
+            </button>
+          )}
           <button
             type="button"
             onClick={() => onArchive?.(project.id)}
