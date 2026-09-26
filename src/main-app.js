@@ -13,7 +13,7 @@ import {
 } from './pages/input-form/input-form.js';
 import { toggleAccordion } from './pages/results/results.js';
 import { finalizeSubmission } from './pages/memorial/memorial.js';
-import { exportXML, exportCSV, printMemorial } from './services/exporters.js';
+import { exportPDF, exportXML, exportCSV, printMemorial } from './services/exporters.js';
 import { updateProjectProgress } from './components/topbar.js';
 
 Object.assign(window, {
@@ -29,6 +29,7 @@ Object.assign(window, {
     updateProjectProgress,
     toggleAccordion,
     finalizeSubmission,
+    exportPDF,
     exportXML,
     exportCSV,
     printMemorial
