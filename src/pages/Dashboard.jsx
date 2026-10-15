@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, WifiOff, FolderOpen } from "lucide-react";
+import { Plus, Database, FolderOpen } from "lucide-react";
 import { useProjects } from "../store/ProjectsContext";
 import { statusMeta, statusOrder } from "../data/mockProjects";
 import PageBanner from "../components/PageBanner";
@@ -65,8 +65,8 @@ export default function Dashboard() {
       <div className="mx-auto max-w-shell px-5 py-8 sm:px-8">
         {usingMock && (
           <p className="mb-5 inline-flex items-center gap-2 rounded-lg border border-warn/25 bg-warn-soft px-3 py-2 text-[12.5px] font-medium text-warn">
-            <WifiOff size={14} />
-            API Java indisponível — exibindo dados de demonstração.
+            <Database size={14} />
+            Modo local — dados de demonstração salvos neste navegador.
           </p>
         )}
 

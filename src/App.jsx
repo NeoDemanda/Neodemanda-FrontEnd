@@ -6,6 +6,7 @@ import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import NewProject from "./pages/NewProject";
 import Archived from "./pages/Archived";
+import CalculationMemorial from "./pages/CalculationMemorial";
 
 export default function App() {
   return (
@@ -18,6 +19,7 @@ export default function App() {
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/novo-projeto" element={<NewProject />} />
             <Route path="/arquivados" element={<Archived />} />
+            <Route path="/projetos/:id/memorial" element={<CalculationMemorial />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
         </main>

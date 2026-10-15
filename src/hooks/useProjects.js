@@ -1,32 +1,28 @@
-import { useEffect, useState, useCallback } from "react";
-import api, { endpoints } from "../lib/api";
+import { useCallback, useEffect, useState } from "react";
 import { mockProjects } from "../data/mockProjects";
 
-/**
- * Loads the project list from the Java backend. If the API isn't reachable
- * yet (common during frontend-first development), it falls back to local
- * mock data and flags `usingMock: true` so the UI can show a subtle notice.
- */
-export function useProjects() {
-  const [projects, setProjects] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [usingMock, setUsingMock] = useState(false);
-  const [error, setError] = useState(null);
+const STORAGE_KEY = "neodemanda:projects";
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const { data } = await api.get(endpoints.projects);
-      setProjects(Array.isArray(data) ? data : data?.content ?? []);
-      setUsingMock(false);
-    } catch (err) {
-      setProjects(mockProjects);
-      setUsingMock(true);
-      setError(err);
-    } finally {
-      setLoading(false);
-    }
+function readProjects() {
+  try {
+    const stored = window.localStorage.getItem(STORAGE_KEY);
+    if (!stored) return mockProjects;
+    const parsed = JSON.parse(stored);
+    return Array.isArray(parsed) ? parsed : mockProjects;
+  } catch {
+    return mockProjects;
+  }
+}
+
+/** Fonte local usada quando a aplicação é executada sem backend. */
+export function useProjects() {
+  const [projects, setProjects] = useState(() => readProjects());
+  const [loading] = useState(false);
+  const [usingMock] = useState(true);
+  const [error] = useState(null);
+
+  const load = useCallback(() => {
+    setProjects(readProjects());
   }, []);
 
   useEffect(() => {
