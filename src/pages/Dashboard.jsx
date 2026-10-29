@@ -2,9 +2,13 @@ import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Plus, WifiOff, FolderOpen } from "lucide-react";
 import { useProjects } from "../store/ProjectsContext";
+import { useAuth } from "../store/AuthContext";
+import { exportProjectPdf } from "../services/pdfExportReact";
 import { statusMeta, statusOrder } from "../data/mockProjects";
 import PageBanner from "../components/PageBanner";
 import ProjectCard from "../components/ProjectCard";
+import Reveal from "../components/Reveal";
+import CountUp from "../components/CountUp";
 
 const stats = [
   { key: "todos", label: "Projetos", color: "text-white" },
@@ -15,7 +19,10 @@ const stats = [
 
 export default function Dashboard() {
   const { ativos, loading, usingMock, archiveProject, deleteProject } = useProjects();
+  const { usuario } = useAuth();
   const [filtro, setFiltro] = useState("todos");
+
+  const exportarPdf = (projeto) => exportProjectPdf(projeto, { projetista: usuario?.nome });
 
   const contagem = useMemo(() => {
     const base = { todos: ativos.length };
@@ -42,21 +49,16 @@ export default function Dashboard() {
           </Link>
         }
       >
-        <dl className="mt-9 grid grid-cols-2 border-t border-white/10 sm:grid-cols-4">
-          {stats.map(({ key, label, color }, i) => (
+        <dl className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          {stats.map(({ key, label, color }) => (
             <div
               key={key}
-              className={[
-                "border-white/10 px-5 pb-1 pt-5",
-                i === 1 || i === 3 ? "border-l" : "",
-                i > 1 ? "border-t sm:border-t-0" : "",
-                i > 0 ? "sm:border-l" : "",
-              ].join(" ")}
+              className="rounded-2xl border border-white/10 bg-white/[0.06] px-5 py-4 backdrop-blur-sm"
             >
               <dd className={`font-display text-[32px] font-extrabold leading-none ${color}`}>
-                {contagem[key] ?? 0}
+                <CountUp to={contagem[key] ?? 0} />
               </dd>
-              <dt className="eyebrow mt-2.5 text-white/45">{label}</dt>
+              <dt className="eyebrow mt-2.5 text-white/50">{label}</dt>
             </div>
           ))}
         </dl>
@@ -124,13 +126,15 @@ export default function Dashboard() {
             </div>
           ) : (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {lista.map((project) => (
-                <ProjectCard
-                  key={project.id}
-                  project={project}
-                  onArchive={archiveProject}
-                  onDelete={deleteProject}
-                />
+              {lista.map((project, i) => (
+                <Reveal key={project.id} delay={i % 4} className="h-full">
+                  <ProjectCard
+                    project={project}
+                    onArchive={archiveProject}
+                    onDelete={deleteProject}
+                    onExportPdf={exportarPdf}
+                  />
+                </Reveal>
               ))}
             </div>
           )}

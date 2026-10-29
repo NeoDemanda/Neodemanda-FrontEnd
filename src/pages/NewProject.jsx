@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowLeft, Info } from "lucide-react";
 import { useProjects } from "../store/ProjectsContext";
+import { useAuth } from "../store/AuthContext";
 import PageBanner from "../components/PageBanner";
 
 const estadoInicial = {
@@ -15,6 +16,7 @@ const estadoInicial = {
 
 export default function NewProject() {
   const { createProject } = useProjects();
+  const { usuario } = useAuth();
   const navigate = useNavigate();
   const [form, setForm] = useState(estadoInicial);
   const [erros, setErros] = useState({});
@@ -37,7 +39,7 @@ export default function NewProject() {
   function salvar(evento) {
     evento.preventDefault();
     if (!validar()) return;
-    createProject(form);
+    createProject({ ...form, projetista: usuario?.nome });
     navigate("/dashboard");
   }
 
