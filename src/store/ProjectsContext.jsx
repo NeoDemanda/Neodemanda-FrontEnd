@@ -63,6 +63,8 @@ export function ProjectsProvider({ children }) {
       fatorPotencia: Number(form.fatorPotencia),
       unidades: Number(form.unidades),
       protocolo: null,
+      projetista: form.projetista || null,
+      dataSubmissao: null,
       atualizadoEm: new Date().toISOString().slice(0, 10),
       arquivado: false,
     };

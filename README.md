@@ -78,6 +78,19 @@ Valores válidos de `status`: `rascunho`, `em_analise`, `validado`,
 `inconsistente`, `submetido`, `arquivado`. Valores de `tipoLigacao`:
 `monofasico`, `bifasico`, `trifasico` (ver `src/data/mockProjects.js`).
 
+## Login e exportação de PDF
+
+- **Login**: botão "Entrar" na navbar leva a `/login`. O projetista logado fica em
+  `sessionStorage` (`neodemanda_user` / `neodemanda_role`) via `src/store/AuthContext.jsx`.
+  Por ora é um login de demonstração, sem validação de senha.
+- **PDF do memorial** (`src/services/pdfExportReact.js`, botão **PDF** em cada card do
+  dashboard). O documento traz a logo da Neoenergia, o nome do **projetista**, a
+  **data de submissão** (`dataSubmissao` do projeto; "Ainda não submetido" quando vazia) e a
+  **data de exportação** (momento em que o PDF foi gerado). O PDF é gerado com `jspdf`,
+  carregado só no momento da exportação.
+- Novos campos no projeto (API / mock): `projetista` (string) e `dataSubmissao`
+  (`YYYY-MM-DD` ou `null`).
+
 ## Estrutura de pastas
 
 ```

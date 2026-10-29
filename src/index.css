@@ -111,3 +111,126 @@ body {
     scroll-behavior: auto !important;
   }
 }
+
+/* ===================== Animações ===================== */
+.btn-accent { position: relative; overflow: hidden; }
+.btn-accent::after {
+  content: ""; position: absolute; top: 0; left: -80%; width: 50%; height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255,255,255,.5), transparent);
+  transform: skewX(-20deg); pointer-events: none;
+}
+.btn-accent:not(:disabled):hover::after { animation: shine .7s; }
+@keyframes shine { to { left: 130%; } }
+
+/* Revelação ao rolar (escalonada por --i) */
+.rv {
+  opacity: 0; transform: translateY(30px);
+  transition: opacity .8s ease, transform .8s cubic-bezier(.2,.8,.2,1);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.rv.in { opacity: 1; transform: none; }
+
+/* Título do hero, palavra por palavra */
+.word { display: inline-block; overflow: hidden; vertical-align: bottom; padding-bottom: .1em; margin-bottom: -.1em; }
+.word > span {
+  display: inline-block; transform: translateY(110%);
+  animation: wordUp .8s cubic-bezier(.2,.8,.2,1) forwards;
+  animation-delay: calc(var(--i) * 80ms + 150ms);
+}
+@keyframes wordUp { to { transform: none; } }
+
+.fade-in { opacity: 0; transform: translateY(16px); animation: fadeIn .8s ease forwards; animation-delay: var(--d, .9s); }
+@keyframes fadeIn { to { opacity: 1; transform: none; } }
+
+.blob { animation: drift 14s ease-in-out infinite alternate; }
+@keyframes drift { to { translate: -60px 50px; scale: 1.15; } }
+.float { animation: float 6s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-14px) rotate(1deg); } }
+.ping { animation: ping 1.8s infinite; }
+@keyframes ping { 0% { box-shadow: 0 0 0 0 rgba(22,163,74,.6); } 100% { box-shadow: 0 0 0 10px transparent; } }
+
+/* Card com tilt 3D e brilho que segue o cursor */
+.tilt {
+  position: relative; overflow: hidden;
+  transform: perspective(800px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform .15s, box-shadow .3s;
+}
+.tilt::before {
+  content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity .3s;
+  background: radial-gradient(260px circle at var(--mx, 50%) var(--my, 0%), rgba(247,148,29,.16), transparent 60%);
+}
+.tilt:hover::before { opacity: 1; }
+
+/* Faixa de status rolando */
+.marquee-track { animation: marquee 30s linear infinite; }
+.marquee:hover .marquee-track { animation-play-state: paused; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+
+/* Linha do ciclo de vida */
+.tl-line { width: 0; transition: width 2.4s cubic-bezier(.4,0,.2,1); }
+.tl.in .tl-line { width: 80%; }
+.tl-dot { transition: all .5s; transition-delay: calc(var(--i) * 450ms); }
+.tl.in .tl-dot { border-color: #16A34A; background: #16A34A; color: #fff; transform: scale(1.08); }
+
+/* Folha de PDF de exemplo: linhas que se desenham */
+.sheet-line { transform: scaleX(0); transform-origin: left; transition: transform .9s cubic-bezier(.2,.8,.2,1); transition-delay: calc(var(--i) * 120ms + 400ms); }
+.in .sheet-line { transform: scaleX(var(--w, 1)); }
+
+/* Grade decorativa dos banners */
+.bg-grid {
+  background-image: linear-gradient(rgba(255,255,255,.05) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,.05) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse at 70% 30%, #000, transparent 70%);
+  -webkit-mask-image: radial-gradient(ellipse at 70% 30%, #000, transparent 70%);
+}
+
+
+/* ===================== Tema escuro NeoDemanda ===================== */
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --page: #07120d;
+}
+html[data-theme="dark"] body {
+  background: #07120d;
+  color: #e8f3ec;
+}
+html[data-theme="dark"] ::selection { background: #14532d; color: #f0fdf4; }
+html[data-theme="dark"] .bg-page { background-color: #07120d !important; }
+html[data-theme="dark"] .bg-white { background-color: #0e2117 !important; }
+html[data-theme="dark"] .bg-white\\/95 { background-color: rgb(14 33 23 / .95) !important; }
+html[data-theme="dark"] .bg-\\[\\#EBF0EC\\] { background-color: #07120d !important; }
+html[data-theme="dark"] .text-ink { color: #e5f2e9 !important; }
+html[data-theme="dark"] .text-ink\\/soft,
+html[data-theme="dark"] .text-ink-soft { color: #a2b9aa !important; }
+html[data-theme="dark"] .border-line { border-color: #20392b !important; }
+html[data-theme="dark"] .card {
+  background: #0e2117;
+  border-color: #20392b;
+  box-shadow: 0 8px 28px -18px rgba(0,0,0,.7);
+}
+html[data-theme="dark"] .btn-ghost,
+html[data-theme="dark"] .field {
+  color: #e5f2e9;
+  background: #10251a;
+  border-color: #294333;
+}
+html[data-theme="dark"] .field-label { color: #dcebe1; }
+html[data-theme="dark"] .field:focus { background: #132c1e; }
+html[data-theme="dark"] .field::placeholder { color: #789382; }
+html[data-theme="dark"] .btn-ghost:hover { background: #193525; border-color: #3c6049; }
+html[data-theme="dark"] input,
+html[data-theme="dark"] select,
+html[data-theme="dark"] textarea { color-scheme: dark; }
+html[data-theme="dark"] .bg-\\[\\#F5F8F6\\],
+html[data-theme="dark"] .bg-\\[\\#f5f8f6\\] { background-color: #10251a !important; }
+html[data-theme="dark"] .text-\\[\\#11241A\\],
+html[data-theme="dark"] .text-\\[\\#11241a\\] { color: #e5f2e9 !important; }
+html[data-theme="dark"] .border-\\[\\#E3E9E4\\],
+html[data-theme="dark"] .border-\\[\\#e3e9e4\\] { border-color: #20392b !important; }
+html[data-theme="dark"] .bg-ok-soft { background-color: #123321 !important; }
+html[data-theme="dark"] .bg-warn-soft { background-color: #382714 !important; }
+html[data-theme="dark"] .bg-bad-soft { background-color: #3b1919 !important; }
+html[data-theme="dark"] .bg-info-soft { background-color: #211e42 !important; }
+html[data-theme="dark"] footer { border-color: #20392b; }
+html[data-theme="dark"] ::-webkit-scrollbar-track { background: #07120d; }
+html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #294333; }

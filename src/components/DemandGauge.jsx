@@ -1,5 +1,8 @@
+import { useEffect, useState } from "react";
+
 // Arco de 270° aberto na base, usado para mostrar a utilização da demanda
 // contratada. `pct` vai de 0 a 1 (valores acima de 1 saturam o arco).
+// O arco "enche" ao aparecer e anima a cada mudança de valor.
 const R = 34;
 const CX = 50;
 const CY = 50;
@@ -14,6 +17,11 @@ const [x1, y1] = ponto(45);
 const ARCO = `M ${x0} ${y0} A ${R} ${R} 0 1 1 ${x1} ${y1}`;
 
 export default function DemandGauge({ pct = 0, color = "#16A34A", size = 72 }) {
+  const [montado, setMontado] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMontado(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
   const preenchido = Math.max(0, Math.min(pct, 1));
 
   return (
@@ -28,7 +36,8 @@ export default function DemandGauge({ pct = 0, color = "#16A34A", size = 72 }) {
           strokeLinecap="round"
           pathLength="100"
           strokeDasharray="100"
-          strokeDashoffset={100 - preenchido * 100}
+          strokeDashoffset={100 - (montado ? preenchido : 0) * 100}
+          style={{ transition: "stroke-dashoffset 1.2s cubic-bezier(.2,.8,.2,1), stroke .4s" }}
         />
       )}
     </svg>
