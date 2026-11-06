@@ -97,10 +97,7 @@ export default function Home() {
 
         <div className="relative mx-auto grid max-w-shell items-center gap-12 px-5 sm:px-8 lg:grid-cols-[1.1fr_0.9fr]">
           <div>
-            <p className="eyebrow fade-in inline-flex items-center gap-2.5 text-accent [--d:.1s]">
-              <span className="h-px w-6 bg-accent" />
-              Neoenergia Pernambuco
-            </p>
+            
             <h1 className="mt-4 max-w-2xl font-display text-[38px] font-extrabold leading-[1.06] tracking-tight text-white sm:text-[56px]">
               <Palavras>Cálculo de demanda elétrica com um</Palavras>
               <span className="text-accent">

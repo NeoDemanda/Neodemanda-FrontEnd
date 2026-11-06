@@ -20,14 +20,22 @@ const nomeDoPerfil = (perfil) => {
   return perfil || "Usuário";
 };
 
-function normalizarUsuario(dados) {
+// `papel` é a área do portal escolhida no login ("projetista" ou "analista").
+// A API valida as credenciais; o papel define qual dashboard a pessoa vê.
+function normalizarPapel(papel) {
+  return papel === "analista" ? "analista" : "projetista";
+}
+
+function normalizarUsuario(dados, papel) {
   const email = dados.email;
+  const papelFinal = normalizarPapel(papel ?? dados.papel);
   return {
     id: dados.id,
     email,
     perfil: dados.perfil,
+    papel: papelFinal,
     nome: email,
-    cargo: nomeDoPerfil(dados.perfil),
+    cargo: papelFinal === "analista" ? "Analista" : nomeDoPerfil(dados.perfil),
     iniciais: iniciaisDe(email),
   };
 }
@@ -37,12 +45,8 @@ function lerSessao() {
     const salvo = sessionStorage.getItem(KEY_USUARIO);
     if (!salvo) return null;
     const dados = JSON.parse(salvo);
-    if (dados.perfil === "DEMO") {
-      return {
-        ...dados,
-        iniciais: iniciaisDe(dados.nome || "Demonstração"),
-      };
-    }
+    // Sessões antigas de demonstração não são mais aceitas.
+    if (!dados || dados.perfil === "DEMO" || !dados.email) return null;
     return normalizarUsuario(dados);
   } catch {
     return null;
@@ -53,13 +57,13 @@ export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(lerSessao);
 
   // Autenticação real: envia email/senha ao endpoint do Spring Boot.
-  const autenticar = useCallback(async ({ email, senha }) => {
+  const autenticar = useCallback(async ({ email, senha, papel }) => {
     const resposta = await api.post(endpoints.login, {
       email: email.trim(),
       senha,
     });
 
-    const autenticado = normalizarUsuario(resposta.data);
+    const autenticado = normalizarUsuario(resposta.data, papel);
     try {
       // O backend atual retorna id, email e perfil, mas ainda não emite JWT.
       sessionStorage.setItem(
@@ -68,6 +72,7 @@ export function AuthProvider({ children }) {
           id: autenticado.id,
           email: autenticado.email,
           perfil: autenticado.perfil,
+          papel: autenticado.papel,
         })
       );
     } catch {
@@ -75,33 +80,6 @@ export function AuthProvider({ children }) {
     }
     setUsuario(autenticado);
     return autenticado;
-  }, []);
-
-  // Mantém o acesso demonstrativo separado do login validado pela API.
-  const loginDemo = useCallback(({ nome, cargo = "Modo Demonstração" }) => {
-    const demonstracao = {
-      id: null,
-      email: null,
-      perfil: "DEMO",
-      nome: nome.trim(),
-      cargo,
-      iniciais: iniciaisDe(nome),
-    };
-    try {
-      sessionStorage.setItem(
-        KEY_USUARIO,
-        JSON.stringify({
-          id: null,
-          email: null,
-          perfil: "DEMO",
-          nome: demonstracao.nome,
-          cargo,
-        })
-      );
-    } catch {
-      // Continua em memória.
-    }
-    setUsuario(demonstracao);
   }, []);
 
   const logout = useCallback(() => {
@@ -117,8 +95,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   const value = useMemo(
-    () => ({ usuario, autenticar, loginDemo, logout }),
-    [usuario, autenticar, loginDemo, logout]
+    () => ({ usuario, autenticar, logout }),
+    [usuario, autenticar, logout]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

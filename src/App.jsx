@@ -8,6 +8,15 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NewProject from "./pages/NewProject";
 import Archived from "./pages/Archived";
+import AnalystDashboard from "./pages/AnalystDashboard";
+import RequireAuth from "./components/RequireAuth";
+import { useAuth } from "./store/AuthContext";
+
+// O mesmo caminho mostra o dashboard de cada perfil.
+function DashboardPorPerfil() {
+  const { usuario } = useAuth();
+  return usuario?.papel === "analista" ? <AnalystDashboard /> : <Dashboard />;
+}
 
 function Layout() {
   const { pathname } = useLocation();
@@ -20,9 +29,30 @@ function Layout() {
       <main className="flex-1">
         <Routes>
           <Route path="/" element={<Home />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/novo-projeto" element={<NewProject />} />
-          <Route path="/arquivados" element={<Archived />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <DashboardPorPerfil />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/novo-projeto"
+            element={
+              <RequireAuth papel="projetista">
+                <NewProject />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/arquivados"
+            element={
+              <RequireAuth papel="projetista">
+                <Archived />
+              </RequireAuth>
+            }
+          />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>
