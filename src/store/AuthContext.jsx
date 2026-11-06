@@ -1,35 +1,49 @@
 import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import api, { endpoints } from "../lib/api";
 
-/**
- * Autenticação de demonstração.
- *
- * Guarda o projetista logado em sessionStorage (mesmas chaves do login
- * antigo: `neodemanda_user` / `neodemanda_role`). Quando o backend Java
- * tiver login de verdade, basta trocar o corpo de `login()` por uma
- * chamada à API e gravar o token em `neodemanda:token` (ver lib/api.js).
- */
 const AuthContext = createContext(null);
 
-const KEY_NOME = "neodemanda_user";
-const KEY_CARGO = "neodemanda_role";
+const KEY_USUARIO = "neodemanda:usuario";
 
 const iniciaisDe = (nome) =>
   nome
     .trim()
-    .split(/\s+/)
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
     .slice(0, 2)
-    .map((p) => p[0]?.toUpperCase() ?? "")
+    .map((parte) => parte[0]?.toUpperCase() ?? "")
     .join("");
+
+const nomeDoPerfil = (perfil) => {
+  if (perfil === "ANALISTA") return "Analista";
+  if (perfil === "PROJETISTA") return "Projetista";
+  return perfil || "Usuário";
+};
+
+function normalizarUsuario(dados) {
+  const email = dados.email;
+  return {
+    id: dados.id,
+    email,
+    perfil: dados.perfil,
+    nome: email,
+    cargo: nomeDoPerfil(dados.perfil),
+    iniciais: iniciaisDe(email),
+  };
+}
 
 function lerSessao() {
   try {
-    const nome = sessionStorage.getItem(KEY_NOME);
-    if (!nome) return null;
-    return {
-      nome,
-      cargo: sessionStorage.getItem(KEY_CARGO) || "Projetista",
-      iniciais: iniciaisDe(nome),
-    };
+    const salvo = sessionStorage.getItem(KEY_USUARIO);
+    if (!salvo) return null;
+    const dados = JSON.parse(salvo);
+    if (dados.perfil === "DEMO") {
+      return {
+        ...dados,
+        iniciais: iniciaisDe(dados.nome || "Demonstração"),
+      };
+    }
+    return normalizarUsuario(dados);
   } catch {
     return null;
   }
@@ -38,28 +52,75 @@ function lerSessao() {
 export function AuthProvider({ children }) {
   const [usuario, setUsuario] = useState(lerSessao);
 
-  const login = useCallback(({ nome, cargo = "Projetista" }) => {
-    const limpo = nome.trim();
+  // Autenticação real: envia email/senha ao endpoint do Spring Boot.
+  const autenticar = useCallback(async ({ email, senha }) => {
+    const resposta = await api.post(endpoints.login, {
+      email: email.trim(),
+      senha,
+    });
+
+    const autenticado = normalizarUsuario(resposta.data);
     try {
-      sessionStorage.setItem(KEY_NOME, limpo);
-      sessionStorage.setItem(KEY_CARGO, cargo);
+      // O backend atual retorna id, email e perfil, mas ainda não emite JWT.
+      sessionStorage.setItem(
+        KEY_USUARIO,
+        JSON.stringify({
+          id: autenticado.id,
+          email: autenticado.email,
+          perfil: autenticado.perfil,
+        })
+      );
     } catch {
-      /* sessionStorage indisponível: segue só em memória */
+      // A sessão continua disponível em memória se o storage estiver bloqueado.
     }
-    setUsuario({ nome: limpo, cargo, iniciais: iniciaisDe(limpo) });
+    setUsuario(autenticado);
+    return autenticado;
+  }, []);
+
+  // Mantém o acesso demonstrativo separado do login validado pela API.
+  const loginDemo = useCallback(({ nome, cargo = "Modo Demonstração" }) => {
+    const demonstracao = {
+      id: null,
+      email: null,
+      perfil: "DEMO",
+      nome: nome.trim(),
+      cargo,
+      iniciais: iniciaisDe(nome),
+    };
+    try {
+      sessionStorage.setItem(
+        KEY_USUARIO,
+        JSON.stringify({
+          id: null,
+          email: null,
+          perfil: "DEMO",
+          nome: demonstracao.nome,
+          cargo,
+        })
+      );
+    } catch {
+      // Continua em memória.
+    }
+    setUsuario(demonstracao);
   }, []);
 
   const logout = useCallback(() => {
     try {
-      sessionStorage.removeItem(KEY_NOME);
-      sessionStorage.removeItem(KEY_CARGO);
+      sessionStorage.removeItem(KEY_USUARIO);
+      // Limpa também as chaves usadas pelo login demonstrativo antigo.
+      sessionStorage.removeItem("neodemanda_user");
+      sessionStorage.removeItem("neodemanda_role");
     } catch {
-      /* ignora */
+      // Ignora indisponibilidade do sessionStorage.
     }
     setUsuario(null);
   }, []);
 
-  const value = useMemo(() => ({ usuario, login, logout }), [usuario, login, logout]);
+  const value = useMemo(
+    () => ({ usuario, autenticar, loginDemo, logout }),
+    [usuario, autenticar, loginDemo, logout]
+  );
+
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
