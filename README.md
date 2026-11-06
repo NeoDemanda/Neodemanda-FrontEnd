@@ -80,9 +80,9 @@ Valores válidos de `status`: `rascunho`, `em_analise`, `validado`,
 
 ## Login e exportação de PDF
 
-- **Login**: botão "Entrar" na navbar leva a `/login`. O projetista logado fica em
-  `sessionStorage` (`neodemanda_user` / `neodemanda_role`) via `src/store/AuthContext.jsx`.
-  Por ora é um login de demonstração, sem validação de senha.
+- **Login real**: a rota `/login` envia `POST /auth/login` com `{ "email": "...", "senha": "..." }`. O backend responde `{ "id": 1, "email": "...", "perfil": "PROJETISTA" }`. A sessão de interface fica em `sessionStorage` via `src/store/AuthContext.jsx`.
+- **Demonstração**: o botão "Acessar conta de demonstração" continua disponível, mas não chama a API.
+- **Observação de segurança**: o endpoint atual valida as credenciais, mas não emite token JWT nem cookie de sessão. Portanto, o login integrado confirma a identidade para o fluxo do frontend, mas ainda não protege endpoints subsequentes da API.
 - **PDF do memorial** (`src/services/pdfExportReact.js`, botão **PDF** em cada card do
   dashboard). O documento traz a logo da Neoenergia, o nome do **projetista**, a
   **data de submissão** (`dataSubmissao` do projeto; "Ainda não submetido" quando vazia) e a
@@ -107,6 +107,7 @@ src/
 | Rota             | Tela                                         |
 | ---------------- | -------------------------------------------- |
 | `/`              | Home institucional                           |
+| `/login`         | Login integrado à API Java                   |
 | `/dashboard`     | Listagem de projetos com filtros por status  |
 | `/novo-projeto`  | Formulário de cadastro (cria como rascunho)  |
 | `/arquivados`    | Tabela de projetos arquivados                |

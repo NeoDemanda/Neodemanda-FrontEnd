@@ -1,6 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight, ShieldCheck, FileText, Repeat, Info } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  ShieldCheck,
+  FileText,
+  Repeat,
+  Info,
+  LoaderCircle,
+} from "lucide-react";
 import { useAuth } from "../store/AuthContext";
 import BrandMark from "../components/BrandMark";
 
@@ -10,31 +18,56 @@ const destaques = [
   { icon: FileText, texto: "Memorial em PDF com projetista e datas" },
 ];
 
-export default function Login() {
-  const { login } = useAuth();
-  const navigate = useNavigate();
-  const [nome, setNome] = useState("");
-  const [cargo, setCargo] = useState("Projetista");
-  const [erro, setErro] = useState("");
+function mensagemDoErro(error) {
+  const status = error?.response?.status;
+  const dados = error?.response?.data;
 
-  function entrar(e) {
-    e.preventDefault();
-    if (nome.trim().length < 3) {
-      setErro("Informe o nome completo do projetista.");
+  if (!error?.response) {
+    return "Não foi possível conectar ao servidor. Confira se o backend está em execução.";
+  }
+  if (status === 401) return "E-mail ou senha inválidos.";
+  if (status === 400) {
+    return dados?.fields?.email || dados?.fields?.senha || dados?.message ||
+      "Confira o e-mail e a senha informados.";
+  }
+  return dados?.message || "Ocorreu um erro ao entrar. Tente novamente.";
+}
+
+export default function Login() {
+  const { autenticar, loginDemo } = useAuth();
+  const navigate = useNavigate();
+  const [email, setEmail] = useState("");
+  const [senha, setSenha] = useState("");
+  const [erro, setErro] = useState("");
+  const [carregando, setCarregando] = useState(false);
+
+  async function entrar(event) {
+    event.preventDefault();
+    setErro("");
+
+    if (!email.trim() || !senha) {
+      setErro("Informe seu e-mail e sua senha.");
       return;
     }
-    login({ nome, cargo });
-    navigate("/dashboard");
+
+    setCarregando(true);
+    try {
+      await autenticar({ email, senha });
+      navigate("/dashboard", { replace: true });
+    } catch (error) {
+      setErro(mensagemDoErro(error));
+    } finally {
+      setCarregando(false);
+    }
   }
 
   function entrarDemo() {
-    login({ nome: "Artur Rocha", cargo: "Projetista Sênior" });
-    navigate("/dashboard");
+    loginDemo({ nome: "Artur Rocha", cargo: "Projetista Sênior" });
+    navigate("/dashboard", { replace: true });
   }
 
   return (
     <div className="grid min-h-screen lg:grid-cols-[1.05fr_1fr]">
-      {/* Painel institucional */}
       <aside className="relative hidden overflow-hidden bg-brand-950 bg-banner lg:block">
         <div aria-hidden="true" className="pointer-events-none absolute inset-0">
           <div className="absolute -right-20 -top-24 h-[420px] w-[420px] rounded-full bg-accent/20 blur-[100px]" />
@@ -83,7 +116,6 @@ export default function Login() {
         </div>
       </aside>
 
-      {/* Formulário */}
       <main className="flex items-center justify-center bg-page px-5 py-12 sm:px-8">
         <div className="w-full max-w-[400px]">
           <Link
@@ -108,39 +140,65 @@ export default function Login() {
             Entrar como projetista
           </h1>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-            O nome informado aparece nos PDFs exportados e nos projetos que você cadastrar.
+            Entre com o e-mail e a senha cadastrados no NeoDemanda.
           </p>
 
           <form onSubmit={entrar} className="card mt-7 p-6" noValidate>
-            <label className="field-label" htmlFor="nome">
-              Nome do projetista <span className="text-accent">*</span>
+            <label className="field-label" htmlFor="email">
+              E-mail <span className="text-accent">*</span>
             </label>
             <input
-              id="nome"
+              id="email"
+              type="email"
               className="field"
-              placeholder="Ex: Artur Rocha"
-              autoComplete="name"
-              value={nome}
-              onChange={(e) => {
-                setNome(e.target.value);
+              placeholder="seu.email@exemplo.com"
+              autoComplete="username"
+              inputMode="email"
+              required
+              value={email}
+              disabled={carregando}
+              onChange={(event) => {
+                setEmail(event.target.value);
                 setErro("");
               }}
             />
-            {erro && <p className="mt-1.5 text-[12px] text-bad">{erro}</p>}
 
-            <label className="field-label mt-4" htmlFor="cargo">
-              Cargo
+            <label className="field-label mt-4" htmlFor="senha">
+              Senha <span className="text-accent">*</span>
             </label>
-            <select id="cargo" className="field" value={cargo} onChange={(e) => setCargo(e.target.value)}>
-              <option>Projetista</option>
-              <option>Projetista Sênior</option>
-              <option>Engenheiro Eletricista</option>
-              <option>Analista Neoenergia</option>
-            </select>
+            <input
+              id="senha"
+              type="password"
+              className="field"
+              placeholder="Digite sua senha"
+              autoComplete="current-password"
+              required
+              value={senha}
+              disabled={carregando}
+              onChange={(event) => {
+                setSenha(event.target.value);
+                setErro("");
+              }}
+            />
 
-            <button type="submit" className="btn-accent mt-6 w-full">
-              Entrar
-              <ArrowRight size={16} strokeWidth={2.4} />
+            {erro && (
+              <p role="alert" className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-[12px] text-bad">
+                {erro}
+              </p>
+            )}
+
+            <button type="submit" disabled={carregando} className="btn-accent mt-6 w-full disabled:cursor-not-allowed disabled:opacity-60">
+              {carregando ? (
+                <>
+                  <LoaderCircle size={16} className="animate-spin" />
+                  Validando...
+                </>
+              ) : (
+                <>
+                  Entrar
+                  <ArrowRight size={16} strokeWidth={2.4} />
+                </>
+              )}
             </button>
 
             <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-ink-faint">
@@ -149,14 +207,14 @@ export default function Login() {
               <span className="h-px flex-1 bg-line" />
             </div>
 
-            <button type="button" onClick={entrarDemo} className="btn-ghost w-full justify-center">
+            <button type="button" onClick={entrarDemo} disabled={carregando} className="btn-ghost w-full justify-center disabled:opacity-60">
               Acessar conta de demonstração
             </button>
           </form>
 
           <p className="mt-5 flex items-start gap-2 rounded-lg bg-info-soft px-3.5 py-3 text-[12px] leading-relaxed text-info">
             <Info size={14} className="mt-px shrink-0" />
-            Modo demonstração: ainda não há validação de senha. A autenticação real será ligada à API Java.
+            O acesso principal valida suas credenciais na API Java. A conta de demonstração não consulta o backend.
           </p>
         </div>
       </main>
