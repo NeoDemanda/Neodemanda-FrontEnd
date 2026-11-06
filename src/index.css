@@ -197,10 +197,10 @@ html[data-theme="dark"] body {
 html[data-theme="dark"] ::selection { background: #14532d; color: #f0fdf4; }
 html[data-theme="dark"] .bg-page { background-color: #07120d !important; }
 html[data-theme="dark"] .bg-white { background-color: #0e2117 !important; }
-html[data-theme="dark"] .bg-white\\/95 { background-color: rgb(14 33 23 / .95) !important; }
-html[data-theme="dark"] .bg-\\[\\#EBF0EC\\] { background-color: #07120d !important; }
+html[data-theme="dark"] .bg-white\/95 { background-color: rgb(14 33 23 / .95) !important; }
+html[data-theme="dark"] .bg-\[\#EBF0EC\] { background-color: #07120d !important; }
 html[data-theme="dark"] .text-ink { color: #e5f2e9 !important; }
-html[data-theme="dark"] .text-ink\\/soft,
+html[data-theme="dark"] .text-ink\/soft,
 html[data-theme="dark"] .text-ink-soft { color: #a2b9aa !important; }
 html[data-theme="dark"] .border-line { border-color: #20392b !important; }
 html[data-theme="dark"] .card {
@@ -221,12 +221,12 @@ html[data-theme="dark"] .btn-ghost:hover { background: #193525; border-color: #3
 html[data-theme="dark"] input,
 html[data-theme="dark"] select,
 html[data-theme="dark"] textarea { color-scheme: dark; }
-html[data-theme="dark"] .bg-\\[\\#F5F8F6\\],
-html[data-theme="dark"] .bg-\\[\\#f5f8f6\\] { background-color: #10251a !important; }
-html[data-theme="dark"] .text-\\[\\#11241A\\],
-html[data-theme="dark"] .text-\\[\\#11241a\\] { color: #e5f2e9 !important; }
-html[data-theme="dark"] .border-\\[\\#E3E9E4\\],
-html[data-theme="dark"] .border-\\[\\#e3e9e4\\] { border-color: #20392b !important; }
+html[data-theme="dark"] .bg-\[\#F5F8F6\],
+html[data-theme="dark"] .bg-\[\#f5f8f6\] { background-color: #10251a !important; }
+html[data-theme="dark"] .text-\[\#11241A\],
+html[data-theme="dark"] .text-\[\#11241a\] { color: #e5f2e9 !important; }
+html[data-theme="dark"] .border-\[\#E3E9E4\],
+html[data-theme="dark"] .border-\[\#e3e9e4\] { border-color: #20392b !important; }
 html[data-theme="dark"] .bg-ok-soft { background-color: #123321 !important; }
 html[data-theme="dark"] .bg-warn-soft { background-color: #382714 !important; }
 html[data-theme="dark"] .bg-bad-soft { background-color: #3b1919 !important; }
@@ -234,3 +234,29 @@ html[data-theme="dark"] .bg-info-soft { background-color: #211e42 !important; }
 html[data-theme="dark"] footer { border-color: #20392b; }
 html[data-theme="dark"] ::-webkit-scrollbar-track { background: #07120d; }
 html[data-theme="dark"] ::-webkit-scrollbar-thumb { background: #294333; }
+
+/* Modo escuro: fundos claros usados em cards, modal do analista e rodapés. */
+html[data-theme="dark"] [class~="bg-[#F6F9F7]"] { background-color: #10251a !important; }
+html[data-theme="dark"] [class~="bg-[#FAFCFB]"] { background-color: #0b1b12 !important; }
+html[data-theme="dark"] [class~="hover:bg-[#FAFCFB]"]:hover { background-color: #0b1b12 !important; }
+html[data-theme="dark"] .bg-ok-soft .text-ink,
+html[data-theme="dark"] .bg-ok-soft .text-ink-faint { color: #e5f2e9 !important; }
+html[data-theme="dark"] .text-ink-faint { color: #8fa89a !important; }
+
+/* Seletor Projetista / Analista (login) */
+.seg { background: #dfe7e2; }
+.seg-item { color: #5d7267; }
+.seg-item:hover { color: #11241a; }
+.seg-item[aria-checked="true"] {
+  background: #fff;
+  color: #003d1a;
+  box-shadow: 0 1px 2px rgba(17, 36, 26, 0.12);
+}
+html[data-theme="dark"] .seg { background: #07120d; border: 1px solid #20392b; }
+html[data-theme="dark"] .seg-item { color: #a2b9aa; }
+html[data-theme="dark"] .seg-item:hover { color: #e5f2e9; }
+html[data-theme="dark"] .seg-item[aria-checked="true"] {
+  background: #1a4a2e;
+  color: #ffffff;
+  box-shadow: inset 0 0 0 1px #2f6b49;
+}

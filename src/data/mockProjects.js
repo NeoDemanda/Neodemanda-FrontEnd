@@ -67,6 +67,22 @@ export const mockProjects = [
     arquivado: false,
   },
   {
+    id: "shopping-boa-vista",
+    nome: "Shopping Boa Vista — Expansão",
+    endereco: "R. do Hospício, 120 — Boa Vista, Recife, PE",
+    status: "submetido",
+    demandaCalculada: 138.2,
+    demandaContratada: 180,
+    tipoLigacao: "trifasico",
+    fatorPotencia: 0.92,
+    unidades: 18,
+    protocolo: "NEO-2026-0519",
+    projetista: "Marina Teixeira",
+    dataSubmissao: "2026-08-27",
+    atualizadoEm: "2026-08-27",
+    arquivado: false,
+  },
+  {
     id: "residencia-felipe",
     nome: "Residência Felipe Monteiro",
     endereco: "R. Maestro Paulo, 22 — Botafogo, RJ",
@@ -110,6 +126,14 @@ export const statusMeta = {
   inconsistente: { label: "Inconsistente", tone: "bad" },
   submetido: { label: "Submetido", tone: "info" },
   arquivado: { label: "Arquivado", tone: "slate" },
+};
+
+// Rótulos usados na área do analista (mesmos status, vocabulário de revisão).
+export const statusMetaAnalista = {
+  ...statusMeta,
+  submetido: { label: "Novo", tone: "info" },
+  validado: { label: "Aprovado", tone: "ok" },
+  inconsistente: { label: "Rejeitado", tone: "bad" },
 };
 
 export const ligacaoMeta = {

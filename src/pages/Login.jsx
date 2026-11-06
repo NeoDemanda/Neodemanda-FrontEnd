@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import {
   ArrowLeft,
   ArrowRight,
@@ -8,6 +8,8 @@ import {
   Repeat,
   Info,
   LoaderCircle,
+  DraftingCompass,
+  ClipboardCheck,
 } from "lucide-react";
 import { useAuth } from "../store/AuthContext";
 import BrandMark from "../components/BrandMark";
@@ -34,8 +36,12 @@ function mensagemDoErro(error) {
 }
 
 export default function Login() {
-  const { autenticar, loginDemo } = useAuth();
+  const { autenticar } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  const aviso = location.state?.aviso;
+  const destino = location.state?.from;
+  const [papel, setPapel] = useState("projetista");
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [erro, setErro] = useState("");
@@ -52,18 +58,16 @@ export default function Login() {
 
     setCarregando(true);
     try {
-      await autenticar({ email, senha });
-      navigate("/dashboard", { replace: true });
+      const usuario = await autenticar({ email, senha, papel });
+      // Volta para a página pedida, se o perfil puder acessá-la.
+      const volta =
+        destino && (usuario.papel === "projetista" || destino === "/dashboard") ? destino : "/dashboard";
+      navigate(volta, { replace: true });
     } catch (error) {
       setErro(mensagemDoErro(error));
     } finally {
       setCarregando(false);
     }
-  }
-
-  function entrarDemo() {
-    loginDemo({ nome: "Artur Rocha", cargo: "Projetista Sênior" });
-    navigate("/dashboard", { replace: true });
   }
 
   return (
@@ -137,13 +141,46 @@ export default function Login() {
 
           <p className="eyebrow text-accent-deep">Acesso ao portal</p>
           <h1 className="mt-2 font-display text-[28px] font-extrabold tracking-tight text-ink">
-            Entrar como projetista
+            Entrar como {papel === "analista" ? "analista" : "projetista"}
           </h1>
           <p className="mt-2 text-[14px] leading-relaxed text-ink-soft">
-            Entre com o e-mail e a senha cadastrados no NeoDemanda.
+            Use o mesmo e-mail e a mesma senha cadastrados no NeoDemanda.
           </p>
 
-          <form onSubmit={entrar} className="card mt-7 p-6" noValidate>
+          {aviso && (
+            <p
+              role="alert"
+              className="mt-5 flex items-start gap-2 rounded-lg border border-warn/25 bg-warn-soft px-3.5 py-3 text-[13px] font-medium text-warn"
+            >
+              <Info size={15} className="mt-px shrink-0" />
+              {aviso}
+            </p>
+          )}
+
+          <div role="radiogroup" aria-label="Entrar como" className="seg mt-6 grid grid-cols-2 gap-1 rounded-xl p-1">
+            {[
+              { key: "projetista", label: "Projetista", icon: DraftingCompass },
+              { key: "analista", label: "Analista", icon: ClipboardCheck },
+            ].map(({ key, label, icon: Icon }) => {
+              const ativo = papel === key;
+              return (
+                <button
+                  key={key}
+                  type="button"
+                  role="radio"
+                  aria-checked={ativo}
+                  disabled={carregando}
+                  onClick={() => setPapel(key)}
+                  className="seg-item flex items-center justify-center gap-2 rounded-lg px-3 py-2.5 text-[13.5px] font-semibold transition-colors"
+                >
+                  <Icon size={15} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+
+          <form onSubmit={entrar} className="card mt-4 p-6" noValidate>
             <label className="field-label" htmlFor="email">
               E-mail <span className="text-accent">*</span>
             </label>
@@ -201,21 +238,8 @@ export default function Login() {
               )}
             </button>
 
-            <div className="my-5 flex items-center gap-3 text-[11px] uppercase tracking-widest text-ink-faint">
-              <span className="h-px flex-1 bg-line" />
-              ou
-              <span className="h-px flex-1 bg-line" />
-            </div>
-
-            <button type="button" onClick={entrarDemo} disabled={carregando} className="btn-ghost w-full justify-center disabled:opacity-60">
-              Acessar conta de demonstração
-            </button>
           </form>
 
-          <p className="mt-5 flex items-start gap-2 rounded-lg bg-info-soft px-3.5 py-3 text-[12px] leading-relaxed text-info">
-            <Info size={14} className="mt-px shrink-0" />
-            O acesso principal valida suas credenciais na API Java. A conta de demonstração não consulta o backend.
-          </p>
         </div>
       </main>
     </div>

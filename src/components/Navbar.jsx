@@ -75,9 +75,11 @@ export default function Navbar() {
           <Aba to="/dashboard" icon={LayoutGrid}>
             Dashboard
           </Aba>
-          <Aba to="/arquivados" icon={Archive} badge={arquivados.length}>
-            Arquivados
-          </Aba>
+          {usuario?.papel !== "analista" && (
+            <Aba to="/arquivados" icon={Archive} badge={arquivados.length}>
+              Arquivados
+            </Aba>
+          )}
         </nav>
 
         <div className="ml-auto flex shrink-0 items-center gap-2.5 sm:gap-3">
@@ -93,6 +95,7 @@ export default function Navbar() {
           </button>
           {usuario ? (
             <>
+              {usuario.papel !== "analista" && (
               <Link
                 to="/novo-projeto"
                 className="hidden items-center gap-1.5 rounded-full bg-accent px-3.5 py-2 text-[13px] font-bold text-white transition-colors hover:bg-[#e58207] md:inline-flex"
@@ -100,6 +103,7 @@ export default function Navbar() {
                 <Plus size={14} strokeWidth={2.8} />
                 Novo projeto
               </Link>
+              )}
               <div className="flex items-center gap-2.5 rounded-full border border-white/10 bg-white/[0.06] py-1 pl-1 pr-1 sm:pr-3">
                 <span className="flex h-8 w-8 items-center justify-center rounded-full bg-ok-bright font-display text-[11px] font-bold text-brand-900">
                   {usuario.iniciais}

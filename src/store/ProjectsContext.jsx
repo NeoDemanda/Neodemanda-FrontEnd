@@ -84,6 +84,43 @@ export function ProjectsProvider({ children }) {
     );
   }, []);
 
+  // --- Fluxo do analista ---------------------------------------------------
+  // Um projeto "submetido" só vira "em_analise" quando o analista abre o card.
+  const startReview = useCallback((id) => {
+    setProjects((atuais) =>
+      atuais.map((p) =>
+        p.id === id && p.status === "submetido"
+          ? { ...p, status: "em_analise", analisadoEm: new Date().toISOString().slice(0, 10) }
+          : p
+      )
+    );
+  }, []);
+
+  const approveProject = useCallback((id) => {
+    setProjects((atuais) =>
+      atuais.map((p) =>
+        p.id === id
+          ? { ...p, status: "validado", motivoRejeicao: null, atualizadoEm: new Date().toISOString().slice(0, 10) }
+          : p
+      )
+    );
+  }, []);
+
+  const rejectProject = useCallback((id, motivo = "") => {
+    setProjects((atuais) =>
+      atuais.map((p) =>
+        p.id === id
+          ? {
+              ...p,
+              status: "inconsistente",
+              motivoRejeicao: motivo.trim() || null,
+              atualizadoEm: new Date().toISOString().slice(0, 10),
+            }
+          : p
+      )
+    );
+  }, []);
+
   const deleteProject = useCallback((id) => {
     setProjects((atuais) => atuais.filter((p) => p.id !== id));
   }, []);
@@ -102,8 +139,23 @@ export function ProjectsProvider({ children }) {
       archiveProject,
       restoreProject,
       deleteProject,
+      startReview,
+      approveProject,
+      rejectProject,
     };
-  }, [projects, loading, usingMock, load, createProject, archiveProject, restoreProject, deleteProject]);
+  }, [
+    projects,
+    loading,
+    usingMock,
+    load,
+    createProject,
+    archiveProject,
+    restoreProject,
+    deleteProject,
+    startReview,
+    approveProject,
+    rejectProject,
+  ]);
 
   return <ProjectsContext.Provider value={value}>{children}</ProjectsContext.Provider>;
 }
