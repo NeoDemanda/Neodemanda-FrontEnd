@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { WifiOff, Inbox, CalendarCheck2, UserRound, ChevronRight } from "lucide-react";
+import { Inbox, CalendarCheck2, UserRound, ChevronRight, RefreshCw } from "lucide-react";
 import { useProjects } from "../store/ProjectsContext";
 import PageBanner from "../components/PageBanner";
 import StatusBadge from "../components/StatusBadge";
@@ -9,14 +9,13 @@ import CountUp from "../components/CountUp";
 import ProjectReviewModal from "../components/ProjectReviewModal";
 
 const faixa = {
-  submetido: "bg-info",
-  em_analise: "bg-warn",
+  em_analise: "bg-info",
   validado: "bg-ok",
   inconsistente: "bg-bad",
 };
 
 const abas = [
-  { key: "pendentes", label: "Pendentes", status: ["submetido", "em_analise"] },
+  { key: "pendentes", label: "Pendentes", status: ["em_analise"] },
   { key: "validado", label: "Aprovados", status: ["validado"] },
   { key: "inconsistente", label: "Rejeitados", status: ["inconsistente"] },
 ];
@@ -28,19 +27,18 @@ const dataBR = (iso) => {
 };
 
 export default function AnalystDashboard() {
-  const { ativos, loading, usingMock, startReview, approveProject, rejectProject } = useProjects();
+  const { ativos, loading, error, reload } = useProjects();
   const [filtro, setFiltro] = useState("pendentes");
   const [abertoId, setAbertoId] = useState(null);
 
   // Rascunhos não chegam ao analista: só o que foi submetido pelo projetista.
   const doFluxo = useMemo(
-    () => ativos.filter((p) => ["submetido", "em_analise", "validado", "inconsistente"].includes(p.status)),
+    () => ativos.filter((p) => ["em_analise", "validado", "inconsistente"].includes(p.status)),
     [ativos]
   );
 
   const contagem = useMemo(
     () => ({
-      submetido: doFluxo.filter((p) => p.status === "submetido").length,
       em_analise: doFluxo.filter((p) => p.status === "em_analise").length,
       validado: doFluxo.filter((p) => p.status === "validado").length,
       inconsistente: doFluxo.filter((p) => p.status === "inconsistente").length,
@@ -53,14 +51,11 @@ export default function AnalystDashboard() {
   const aberto = doFluxo.find((p) => p.id === abertoId) ?? null;
 
   const abrir = (projeto) => {
-    // O card só passa a "Em análise" quando o analista clica nele.
-    if (projeto.status === "submetido") startReview(projeto.id);
     setAbertoId(projeto.id);
   };
 
   const stats = [
-    { label: "Novos", valor: contagem.submetido, color: "text-sky-300" },
-    { label: "Em análise", valor: contagem.em_analise, color: "text-accent" },
+    { label: "Em análise", valor: contagem.em_analise, color: "text-sky-300" },
     { label: "Aprovados", valor: contagem.validado, color: "text-ok-bright" },
     { label: "Rejeitados", valor: contagem.inconsistente, color: "text-bad-bright" },
   ];
@@ -72,7 +67,7 @@ export default function AnalystDashboard() {
         title="Dashboard"
         subtitle="Abra um projeto para conferir os cálculos e decidir se ele é aprovado."
       >
-        <dl className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <dl className="mt-9 grid grid-cols-2 gap-3 sm:grid-cols-3">
           {stats.map(({ label, valor, color }) => (
             <div
               key={label}
@@ -88,12 +83,7 @@ export default function AnalystDashboard() {
       </PageBanner>
 
       <div className="mx-auto max-w-shell px-5 py-8 sm:px-8">
-        {usingMock && (
-          <p className="mb-5 inline-flex items-center gap-2 rounded-lg border border-warn/25 bg-warn-soft px-3 py-2 text-[12.5px] font-medium text-warn">
-            <WifiOff size={14} />
-            API Java indisponível — exibindo dados de demonstração.
-          </p>
-        )}
+        {error && <div className="mb-5 flex items-center justify-between gap-3 rounded-lg bg-bad-soft p-3 text-sm text-bad"><span>{error}</span><button onClick={reload} className="btn-ghost"><RefreshCw size={14}/> Tentar novamente</button></div>}
 
         <div className="flex flex-wrap items-center gap-2">
           {abas.map((aba) => {
@@ -132,7 +122,7 @@ export default function AnalystDashboard() {
                 <div key={i} className="h-[218px] animate-pulse rounded-[14px] border border-line bg-white/70" />
               ))}
             </div>
-          ) : lista.length === 0 ? (
+          ) : error ? null : lista.length === 0 ? (
             <div className="card flex flex-col items-center gap-3 px-6 py-16 text-center">
               <Inbox size={26} className="text-ink-faint" />
               <p className="font-display text-[15px] font-bold text-ink">Nada por aqui</p>
@@ -168,7 +158,7 @@ export default function AnalystDashboard() {
                           <DemandGauge pct={pct} color={cor} />
                           <div className="text-right">
                             <span className="font-mono text-[28px] font-bold leading-none" style={{ color: cor }}>
-                              {Number(p.demandaCalculada).toFixed(1)}
+                              {p.demandaCalculada == null ? "—" : Number(p.demandaCalculada).toFixed(1)}
                             </span>
                             <p className="mt-1 text-[12px] text-ink-faint">/ {p.demandaContratada} kVA</p>
                           </div>
@@ -188,7 +178,7 @@ export default function AnalystDashboard() {
                         </dl>
                       </div>
                       <footer className="flex items-center justify-between border-t border-line bg-[#FAFCFB] px-5 py-3 text-[12.5px] font-semibold text-ink-soft group-hover:text-ink">
-                        {p.status === "submetido" ? "Abrir para analisar" : "Ver cálculos"}
+                        {p.status === "em_analise" ? "Abrir para analisar" : "Ver avaliação"}
                         <ChevronRight size={15} />
                       </footer>
                     </button>
@@ -201,18 +191,7 @@ export default function AnalystDashboard() {
       </div>
 
       {aberto && (
-        <ProjectReviewModal
-          project={aberto}
-          onClose={() => setAbertoId(null)}
-          onApprove={(id) => {
-            approveProject(id);
-            setAbertoId(null);
-          }}
-          onReject={(id, motivo) => {
-            rejectProject(id, motivo);
-            setAbertoId(null);
-          }}
-        />
+        <ProjectReviewModal project={aberto} onClose={() => setAbertoId(null)} onEvaluated={() => setAbertoId(null)} />
       )}
     </>
   );

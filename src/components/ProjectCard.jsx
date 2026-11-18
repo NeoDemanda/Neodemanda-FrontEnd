@@ -1,4 +1,5 @@
-import { Archive, Trash2, FileDown, CalendarCheck2, UserRound } from "lucide-react";
+import { Archive, Trash2, FileDown, CalendarCheck2, UserRound, Calculator, Pencil } from "lucide-react";
+import { Link } from "react-router-dom";
 import { exportProjectPdf } from "../services/pdfExportReact";
 import StatusBadge from "./StatusBadge";
 import DemandGauge from "./DemandGauge";
@@ -9,6 +10,7 @@ const siglaTone = { ok: "bg-ok-soft text-ok", info: "bg-info-soft text-info" };
 // Faixa colorida no topo do card, de acordo com o status.
 const faixa = {
   rascunho: "bg-ink-faint/40",
+  em_correcao: "bg-warn",
   em_analise: "bg-warn",
   validado: "bg-ok",
   inconsistente: "bg-bad",
@@ -25,12 +27,12 @@ const dataBR = (iso) => {
 export default function ProjectCard({ project, onArchive, onDelete, onExportPdf }) {
   // Usa o handler da página (que injeta o projetista); sem ele, exporta direto.
   const exportar = onExportPdf ?? exportProjectPdf;
-  const calculado = typeof project.demandaCalculada === "number";
+  const calculado = project.demandaCalculada != null && Number.isFinite(Number(project.demandaCalculada));
   const pct = calculado ? project.demandaCalculada / project.demandaContratada : 0;
   // Verde até 80% da demanda contratada; laranja daí para cima.
   const alerta = pct >= 0.8;
   const cor = alerta ? "#E5861A" : "#16A34A";
-  const ligacao = ligacaoMeta[project.tipoLigacao] ?? ligacaoMeta.monofasico;
+  const ligacao = project.tipoLigacao ? (ligacaoMeta[project.tipoLigacao] ?? ligacaoMeta.monofasico) : null;
 
   return (
     <article className="card group relative flex h-full flex-col overflow-hidden transition-all duration-200 hover:-translate-y-0.5 hover:shadow-cardHover">
@@ -42,7 +44,7 @@ export default function ProjectCard({ project, onArchive, onDelete, onExportPdf 
             <h3 className="line-clamp-2 font-display text-[15px] font-bold leading-snug text-ink">
               {project.nome}
             </h3>
-            <p className="mt-0.5 truncate text-[12.5px] text-ink-faint">{project.endereco}</p>
+            <p className="mt-0.5 truncate text-[12.5px] text-ink-faint">{project.endereco || project.tipoEdificacao || ""}</p>
           </div>
           <StatusBadge status={project.status} />
         </div>
@@ -81,12 +83,12 @@ export default function ProjectCard({ project, onArchive, onDelete, onExportPdf 
 
       <footer className="flex items-center justify-between gap-3 border-t border-line bg-[#FAFCFB] px-5 py-3">
         <div className="flex items-center gap-2 text-[12px] text-ink-faint">
-          <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${siglaTone[ligacao.tone]}`}>
-            {ligacao.sigla}
-          </span>
+          {ligacao && <span className={`rounded px-1.5 py-0.5 font-mono text-[10px] font-bold ${siglaTone[ligacao.tone]}`}>{ligacao.sigla}</span>}
           <span className="font-mono">· {project.unidades} unid.</span>
         </div>
         <div className="flex items-center gap-0.5">
+          { ["rascunho", "em_correcao"].includes(project.status) && <Link to={`/projetos/${project.id}/editar`} title="Editar projeto" className="mr-1 inline-flex items-center gap-1 rounded-lg border border-line px-2 py-1.5 text-[11.5px] font-bold text-ink-soft hover:bg-line/50"><Pencil size={13}/></Link> }
+          <Link to={`/projetos/${project.id}/calculo`} title="Abrir cálculo" className="mr-1 inline-flex items-center gap-1 rounded-lg border border-line px-2.5 py-1.5 text-[11.5px] font-bold text-ink-soft hover:bg-line/50"><Calculator size={13}/> Cálculo</Link>
           <button
             type="button"
             onClick={() => exportar(project)}

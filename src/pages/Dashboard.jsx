@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
-import { Plus, WifiOff, FolderOpen } from "lucide-react";
+import { Plus, FolderOpen, RefreshCw } from "lucide-react";
 import { useProjects } from "../store/ProjectsContext";
 import { useAuth } from "../store/AuthContext";
 import { exportProjectPdf } from "../services/pdfExportReact";
@@ -18,7 +18,7 @@ const stats = [
 ];
 
 export default function Dashboard() {
-  const { ativos, loading, usingMock, archiveProject, deleteProject } = useProjects();
+  const { ativos, loading, error, reload, archiveProject, deleteProject } = useProjects();
   const { usuario } = useAuth();
   const [filtro, setFiltro] = useState("todos");
 
@@ -65,12 +65,7 @@ export default function Dashboard() {
       </PageBanner>
 
       <div className="mx-auto max-w-shell px-5 py-8 sm:px-8">
-        {usingMock && (
-          <p className="mb-5 inline-flex items-center gap-2 rounded-lg border border-warn/25 bg-warn-soft px-3 py-2 text-[12.5px] font-medium text-warn">
-            <WifiOff size={14} />
-            API Java indisponível — exibindo dados de demonstração.
-          </p>
-        )}
+        {error && <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg border border-bad/25 bg-bad-soft px-4 py-3 text-sm text-bad"><span>{error}</span><button onClick={reload} className="btn-ghost"><RefreshCw size={14}/> Tentar novamente</button></div>}
 
         <div className="flex flex-wrap items-center gap-2">
           {abas.map((aba) => {
@@ -110,7 +105,7 @@ export default function Dashboard() {
                 <div key={i} className="h-[218px] animate-pulse rounded-[14px] border border-line bg-white/70" />
               ))}
             </div>
-          ) : lista.length === 0 ? (
+          ) : error ? null : lista.length === 0 ? (
             <div className="card flex flex-col items-center gap-3 px-6 py-16 text-center">
               <FolderOpen size={26} className="text-ink-faint" />
               <p className="font-display text-[15px] font-bold text-ink">

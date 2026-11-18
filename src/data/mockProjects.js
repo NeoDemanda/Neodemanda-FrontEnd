@@ -117,10 +117,11 @@ export const mockProjects = [
 ];
 
 // Ordem em que os filtros aparecem no dashboard.
-export const statusOrder = ["rascunho", "em_analise", "validado", "inconsistente", "submetido"];
+export const statusOrder = ["rascunho", "em_correcao", "em_analise", "validado", "inconsistente"];
 
 export const statusMeta = {
   rascunho: { label: "Rascunho", tone: "slate" },
+  em_correcao: { label: "Em correção", tone: "warn" },
   em_analise: { label: "Em Análise", tone: "warn" },
   validado: { label: "Validado", tone: "ok" },
   inconsistente: { label: "Inconsistente", tone: "bad" },

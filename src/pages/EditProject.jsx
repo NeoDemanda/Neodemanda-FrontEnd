@@ -1,0 +1,19 @@
+import { useEffect, useState } from "react";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import { ArrowLeft } from "lucide-react";
+import PageBanner from "../components/PageBanner";
+import { useProjects } from "../store/ProjectsContext";
+import { mensagemErro } from "../lib/api";
+
+const empty = { nomeProjeto: "", responsavelTecnico: "", creaResponsavel: "", quantidadeUnidadesConsumidoras: "1", cargaInstaladaKva: "", tipoEdificacao: "RESIDENCIAL" };
+export default function EditProject() {
+  const { id } = useParams(); const navigate = useNavigate();
+  const { getProject, updateProject } = useProjects();
+  const [form, setForm] = useState(empty); const [error, setError] = useState(""); const [loading, setLoading] = useState(true); const [saving, setSaving] = useState(false);
+  useEffect(() => { let active = true; getProject(id).then((p) => { if (active) setForm({ nomeProjeto: p.nomeProjeto || p.nome || "", responsavelTecnico: p.responsavelTecnico || "", creaResponsavel: p.creaResponsavel || "", quantidadeUnidadesConsumidoras: String(p.quantidadeUnidadesConsumidoras ?? p.unidades ?? 1), cargaInstaladaKva: String(p.cargaInstaladaKva ?? p.demandaContratada ?? ""), tipoEdificacao: p.tipoEdificacao || "RESIDENCIAL" }); }).catch((e) => { if (active) setError(mensagemErro(e)); }).finally(() => { if (active) setLoading(false); }); return () => { active = false; }; }, [id, getProject]);
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }));
+  async function save(e) { e.preventDefault(); setError(""); setSaving(true); try { await updateProject(id, form); navigate("/dashboard"); } catch (err) { setError(mensagemErro(err)); } finally { setSaving(false); } }
+  return <><PageBanner eyebrow="Neo Demanda · Projeto" title="Editar projeto" subtitle="A API permite editar projetos em rascunho ou em correção." back={<Link to="/dashboard" className="mb-6 inline-flex items-center gap-2 rounded-lg bg-white/10 px-3 py-1.5 text-[13px] font-semibold text-white/80"><ArrowLeft size={14}/> Dashboard</Link>} />
+    <form onSubmit={save} className="mx-auto max-w-[620px] space-y-4 px-5 py-8 sm:px-8"><section className="card space-y-4 p-6"><div><label className="field-label">Nome do projeto</label><input className="field" maxLength={150} value={form.nomeProjeto} onChange={set("nomeProjeto")} required /></div><div><label className="field-label">Responsável técnico</label><input className="field" maxLength={150} value={form.responsavelTecnico} onChange={set("responsavelTecnico")} required /></div><div><label className="field-label">CREA do responsável</label><input className="field" maxLength={30} value={form.creaResponsavel} onChange={set("creaResponsavel")} required /></div><div><label className="field-label">Tipo de edificação</label><select className="field" value={form.tipoEdificacao} onChange={set("tipoEdificacao")}><option value="RESIDENCIAL">Residencial</option><option value="COMERCIAL">Comercial</option><option value="MISTO">Misto</option><option value="INDUSTRIAL">Industrial</option></select></div><div className="grid gap-4 sm:grid-cols-2"><div><label className="field-label">Unidades consumidoras</label><input className="field" type="number" min="1" value={form.quantidadeUnidadesConsumidoras} onChange={set("quantidadeUnidadesConsumidoras")} required /></div><div><label className="field-label">Carga instalada (kVA)</label><input className="field" type="number" min="0.001" step="0.001" value={form.cargaInstaladaKva} onChange={set("cargaInstaladaKva")} required /></div></div></section>
+      {error && <p role="alert" className="whitespace-pre-line rounded-lg bg-bad-soft p-3 text-sm text-bad">{error}</p>}<div className="flex justify-end gap-3"><Link to="/dashboard" className="btn-ghost">Cancelar</Link><button disabled={loading || saving} className="btn-accent" type="submit">{loading ? "Carregando..." : saving ? "Salvando..." : "Salvar alterações"}</button></div></form></>;
+}

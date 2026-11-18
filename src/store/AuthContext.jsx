@@ -22,13 +22,13 @@ const nomeDoPerfil = (perfil) => {
 
 // `papel` é a área do portal escolhida no login ("projetista" ou "analista").
 // A API valida as credenciais; o papel define qual dashboard a pessoa vê.
-function normalizarPapel(papel) {
-  return papel === "analista" ? "analista" : "projetista";
+function normalizarPapel(perfil) {
+  return perfil === "ANALISTA" ? "analista" : "projetista";
 }
 
-function normalizarUsuario(dados, papel) {
+function normalizarUsuario(dados) {
   const email = dados.email;
-  const papelFinal = normalizarPapel(papel ?? dados.papel);
+  const papelFinal = normalizarPapel(dados.perfil);
   return {
     id: dados.id,
     email,
@@ -63,7 +63,10 @@ export function AuthProvider({ children }) {
       senha,
     });
 
-    const autenticado = normalizarUsuario(resposta.data, papel);
+    const autenticado = normalizarUsuario(resposta.data);
+    if (autenticado.papel !== papel) {
+      throw new Error(`Esta conta possui perfil ${autenticado.papel === "analista" ? "Analista" : "Projetista"}. Selecione o perfil correto.`);
+    }
     try {
       // O backend atual retorna id, email e perfil, mas ainda não emite JWT.
       sessionStorage.setItem(
@@ -72,7 +75,6 @@ export function AuthProvider({ children }) {
           id: autenticado.id,
           email: autenticado.email,
           perfil: autenticado.perfil,
-          papel: autenticado.papel,
         })
       );
     } catch {
