@@ -21,6 +21,7 @@ const destaques = [
 ];
 
 function mensagemDoErro(error) {
+  if (error?.message?.startsWith("Esta conta possui perfil")) return error.message;
   const status = error?.response?.status;
   const dados = error?.response?.data;
 

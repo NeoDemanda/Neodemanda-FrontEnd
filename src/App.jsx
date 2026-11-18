@@ -7,6 +7,8 @@ import Home from "./pages/Home";
 import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import NewProject from "./pages/NewProject";
+import CalculationPage from "./pages/CalculationPage";
+import EditProject from "./pages/EditProject";
 import Archived from "./pages/Archived";
 import AnalystDashboard from "./pages/AnalystDashboard";
 import RequireAuth from "./components/RequireAuth";
@@ -36,6 +38,11 @@ function Layout() {
                 <DashboardPorPerfil />
               </RequireAuth>
             }
+          />
+          <Route path="/projetos/:id/editar" element={<RequireAuth papel="projetista"><EditProject /></RequireAuth>} />
+          <Route
+            path="/projetos/:id/calculo"
+            element={<RequireAuth papel="projetista"><CalculationPage /></RequireAuth>}
           />
           <Route
             path="/novo-projeto"

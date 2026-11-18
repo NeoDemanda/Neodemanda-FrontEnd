@@ -1,216 +1,49 @@
 import { useEffect, useState } from "react";
-import { X, CheckCircle2, XCircle, ShieldAlert, Check, Zap } from "lucide-react";
+import { X, CheckCircle2, XCircle, MessageSquareText } from "lucide-react";
 import StatusBadge from "./StatusBadge";
-import { ligacaoMeta } from "../data/mockProjects";
-import { montarMemorial } from "../services/memorial";
+import { useProjects } from "../store/ProjectsContext";
+import { mensagemErro } from "../lib/api";
 
-const fmt = (v, d = 1) =>
-  Number(v).toLocaleString("pt-BR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const fmt = (value) => value == null ? "—" : Number(value).toLocaleString("pt-BR", { maximumFractionDigits: 2 });
 
-/**
- * Detalhe de um projeto para o analista: cálculos feitos pelo projetista,
- * verificações e as ações de aprovar ou rejeitar.
- */
-export default function ProjectReviewModal({ project, onClose, onApprove, onReject }) {
-  const [rejeitando, setRejeitando] = useState(false);
-  const [motivo, setMotivo] = useState("");
-  const memorial = montarMemorial(project);
-  const ligacao = ligacaoMeta[project.tipoLigacao] ?? ligacaoMeta.monofasico;
-  const decidido = project.status === "validado" || project.status === "inconsistente";
+export default function ProjectReviewModal({ project, onClose, onEvaluated }) {
+  const { getCalculation, loadEvaluations, evaluateProject } = useProjects();
+  const [calculation, setCalculation] = useState(null);
+  const [history, setHistory] = useState([]);
+  const [parecer, setParecer] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
-    const onKey = (e) => e.key === "Escape" && onClose();
+    let active = true;
+    Promise.all([getCalculation(project.id), loadEvaluations(project.id)])
+      .then(([calc, evaluations]) => { if (active) { setCalculation(calc); setHistory(evaluations); } })
+      .catch((err) => { if (active) setError(mensagemErro(err)); });
+    const onKey = (event) => event.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
-    const overflow = document.body.style.overflow;
+    const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      document.body.style.overflow = overflow;
-    };
-  }, [onClose]);
+    return () => { active = false; document.removeEventListener("keydown", onKey); document.body.style.overflow = previous; };
+  }, [project.id, getCalculation, loadEvaluations, onClose]);
 
-  return (
-    <div
-      className="fixed inset-0 z-[60] flex items-end justify-center bg-brand-950/70 p-0 backdrop-blur-sm sm:items-center sm:p-6"
-      onMouseDown={(e) => e.target === e.currentTarget && onClose()}
-    >
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="revisao-titulo"
-        className="card flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-b-none shadow-pop sm:rounded-b-[14px]"
-      >
-        <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
-          <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 id="revisao-titulo" className="font-display text-[19px] font-extrabold text-ink">
-                {project.nome}
-              </h2>
-              <StatusBadge status={project.status} papel="analista" />
-            </div>
-            <p className="mt-1 text-[13px] text-ink-faint">{project.endereco}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Fechar"
-            className="rounded-lg p-1.5 text-ink-faint transition-colors hover:bg-line/60 hover:text-ink"
-          >
-            <X size={18} />
-          </button>
-        </header>
+  async function decidir(decisao) {
+    setError(""); setBusy(true);
+    try { await evaluateProject(project.id, decisao, parecer); onEvaluated?.(); }
+    catch (err) { setError(mensagemErro(err)); }
+    finally { setBusy(false); }
+  }
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-6 py-5">
-          <dl className="grid grid-cols-2 gap-x-6 gap-y-3 text-[13px] sm:grid-cols-4">
-            {[
-              ["Projetista", project.projetista ?? "Não informado"],
-              ["Protocolo", project.protocolo ?? "—"],
-              ["Ligação", `${ligacao.label} (${ligacao.sigla})`],
-              ["Unidades", project.unidades],
-            ].map(([rotulo, valor]) => (
-              <div key={rotulo}>
-                <dt className="text-ink-faint">{rotulo}</dt>
-                <dd className="mt-0.5 font-semibold text-ink">{valor}</dd>
-              </div>
-            ))}
-          </dl>
-
-          {!memorial ? (
-            <p className="rounded-lg bg-warn-soft px-4 py-3 text-[13px] text-warn">
-              Este projeto não tem demanda calculada para revisar.
-            </p>
-          ) : (
-            <>
-              <section>
-                <h3 className="font-display text-[14px] font-bold text-ink">Cálculos realizados</h3>
-                <ol className="mt-3 divide-y divide-line rounded-xl border border-line">
-                  {memorial.etapas.map((etapa) => (
-                    <li
-                      key={etapa.titulo}
-                      className={`flex items-center justify-between gap-4 px-4 py-3 ${
-                        etapa.destaque ? "bg-ok-soft" : ""
-                      }`}
-                    >
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-ink">{etapa.titulo}</p>
-                        <p className="mt-0.5 font-mono text-[11.5px] text-ink-faint">{etapa.formula}</p>
-                      </div>
-                      <p className="shrink-0 font-mono text-[15px] font-bold text-ink">
-                        {etapa.resultado}
-                        {etapa.unidade && (
-                          <span className="ml-1 text-[11px] font-medium text-ink-faint">{etapa.unidade}</span>
-                        )}
-                      </p>
-                    </li>
-                  ))}
-                </ol>
-              </section>
-
-              <section className="grid gap-3 sm:grid-cols-3">
-                {[
-                  ["Demanda calculada", `${fmt(memorial.kva)} kVA`],
-                  ["Demanda contratada", `${fmt(memorial.contratada, 0)} kVA`],
-                  [
-                    "Utilização",
-                    memorial.utilizacao == null ? "—" : `${fmt(memorial.utilizacao * 100, 0)}%`,
-                  ],
-                ].map(([rotulo, valor]) => (
-                  <div key={rotulo} className="rounded-xl bg-[#F6F9F7] px-4 py-3">
-                    <p className="text-[12px] text-ink-faint">{rotulo}</p>
-                    <p className="mt-1 font-mono text-[20px] font-bold text-ink">{valor}</p>
-                  </div>
-                ))}
-              </section>
-
-              <section>
-                <h3 className="font-display text-[14px] font-bold text-ink">Verificações</h3>
-                <ul className="mt-3 space-y-2">
-                  {memorial.verificacoes.map((v) => (
-                    <li key={v.titulo} className="flex items-start gap-2.5 text-[13px]">
-                      {v.ok ? (
-                        <Check size={16} className="mt-0.5 shrink-0 text-ok" strokeWidth={2.6} />
-                      ) : (
-                        <ShieldAlert size={16} className="mt-0.5 shrink-0 text-bad" />
-                      )}
-                      <span>
-                        <span className="font-semibold text-ink">{v.titulo}.</span>{" "}
-                        <span className="text-ink-soft">{v.detalhe}</span>
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-            </>
-          )}
-
-          {project.status === "inconsistente" && project.motivoRejeicao && (
-            <p className="rounded-lg bg-bad-soft px-4 py-3 text-[13px] text-bad">
-              <span className="font-semibold">Motivo da rejeição:</span> {project.motivoRejeicao}
-            </p>
-          )}
-
-          {rejeitando && (
-            <div>
-              <label htmlFor="motivo" className="field-label">
-                Motivo da rejeição (opcional)
-              </label>
-              <textarea
-                id="motivo"
-                rows={3}
-                className="field"
-                placeholder="Explique ao projetista o que precisa ser corrigido."
-                value={motivo}
-                onChange={(e) => setMotivo(e.target.value)}
-                autoFocus
-              />
-            </div>
-          )}
-        </div>
-
-        <footer className="flex flex-wrap items-center justify-end gap-3 border-t border-line bg-[#FAFCFB] px-6 py-4">
-          {decidido && !rejeitando ? (
-            <p className="mr-auto flex items-center gap-2 text-[13px] text-ink-soft">
-              <Zap size={14} className="text-ink-faint" />
-              Decisão já registrada. Você pode alterá-la abaixo.
-            </p>
-          ) : null}
-
-          {rejeitando ? (
-            <>
-              <button type="button" className="btn-ghost" onClick={() => setRejeitando(false)}>
-                Voltar
-              </button>
-              <button
-                type="button"
-                onClick={() => onReject(project.id, motivo)}
-                className="inline-flex items-center gap-2 rounded-lg bg-bad px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-red-700"
-              >
-                <XCircle size={16} />
-                Confirmar rejeição
-              </button>
-            </>
-          ) : (
-            <>
-              <button
-                type="button"
-                onClick={() => setRejeitando(true)}
-                className="inline-flex items-center gap-2 rounded-lg border border-bad/30 bg-white px-4 py-2.5 text-[13.5px] font-bold text-bad transition-colors hover:bg-bad-soft"
-              >
-                <XCircle size={16} />
-                Rejeitar projeto
-              </button>
-              <button
-                type="button"
-                onClick={() => onApprove(project.id)}
-                className="inline-flex items-center gap-2 rounded-lg bg-ok px-4 py-2.5 text-[13.5px] font-bold text-white transition-colors hover:bg-green-700"
-              >
-                <CheckCircle2 size={16} />
-                Aprovar projeto
-              </button>
-            </>
-          )}
-        </footer>
+  return <div className="fixed inset-0 z-[60] flex items-end justify-center bg-brand-950/70 p-0 backdrop-blur-sm sm:items-center sm:p-6" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+    <div role="dialog" aria-modal="true" aria-labelledby="revisao-titulo" className="card flex max-h-[94vh] w-full max-w-2xl flex-col overflow-hidden rounded-b-none shadow-pop sm:rounded-b-[14px]">
+      <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5"><div><div className="flex flex-wrap items-center gap-2"><h2 id="revisao-titulo" className="font-display text-xl font-bold">{project.nome}</h2><StatusBadge status={project.status} papel="analista"/></div><p className="mt-1 text-sm text-ink-faint">{project.responsavelTecnico || project.projetista} · CREA {project.creaResponsavel || "não informado"}</p></div><button onClick={onClose} aria-label="Fechar" className="rounded-lg p-1.5 text-ink-faint hover:bg-line"><X size={18}/></button></header>
+      <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3"><div className="rounded-lg bg-page p-3"><p className="text-xs text-ink-faint">Edificação</p><p className="font-semibold">{project.tipoEdificacao}</p></div><div className="rounded-lg bg-page p-3"><p className="text-xs text-ink-faint">Unidades consumidoras</p><p className="font-semibold">{project.unidades}</p></div><div className="rounded-lg bg-page p-3"><p className="text-xs text-ink-faint">Carga instalada</p><p className="font-semibold">{fmt(project.demandaContratada)} kVA</p></div></div>
+        <section><h3 className="font-display font-bold">Resultado calculado pelo backend</h3>{calculation ? <><p className="mt-2 font-mono text-3xl font-bold text-brand-800">{fmt(calculation.resultado?.dproj)} kVA</p><div className="mt-3 divide-y divide-line rounded-lg border border-line">{(calculation.memorial || []).map((step) => <div key={`${step.ordem}-${step.idRegra}`} className="p-3"><p className="text-sm font-semibold">{step.ordem}. {step.descricao}</p><p className="mt-1 text-xs text-ink-soft">{step.formulaAplicada || step.formulaSimbolica}</p><p className="mt-1 text-xs">{step.resultadoTexto || `${fmt(step.valor)} ${step.unidade || ""}`}</p></div>)}</div></> : <p className="mt-2 text-sm text-ink-soft">{error || "Carregando memorial..."}</p>}</section>
+        <section><h3 className="font-display font-bold">Histórico de avaliações</h3>{history.length ? <ul className="mt-2 space-y-2">{history.map((item, index) => <li key={`${item.avaliadoEm}-${index}`} className="rounded-lg bg-page p-3 text-sm"><strong>{item.decisao}</strong> · {item.avaliadoEm ? new Date(item.avaliadoEm).toLocaleString("pt-BR") : ""}<p className="text-ink-soft">{item.parecer || "Sem parecer"}</p></li>)}</ul> : <p className="mt-2 text-sm text-ink-soft">Nenhuma avaliação anterior.</p>}</section>
+        {project.status === "em_analise" && <div><label htmlFor="parecer" className="field-label">Parecer (obrigatório para correção ou reprovação)</label><textarea id="parecer" rows={3} maxLength={2000} className="field" value={parecer} onChange={(e) => setParecer(e.target.value)} placeholder="Descreva a decisão técnica..." /></div>}
+        {error && <p role="alert" className="whitespace-pre-line rounded-lg bg-bad-soft p-3 text-sm text-bad">{error}</p>}
       </div>
+      {project.status === "em_analise" && <footer className="flex flex-wrap justify-end gap-2 border-t border-line bg-[#FAFCFB] px-6 py-4"><button disabled={busy || !parecer.trim()} onClick={() => decidir("REPROVADO")} className="inline-flex items-center gap-2 rounded-lg border border-bad/30 px-3 py-2 text-sm font-semibold text-bad disabled:opacity-50"><XCircle size={15}/> Reprovar</button><button disabled={busy || !parecer.trim()} onClick={() => decidir("EM_CORRECAO")} className="inline-flex items-center gap-2 rounded-lg border border-warn/30 px-3 py-2 text-sm font-semibold text-warn disabled:opacity-50"><MessageSquareText size={15}/> Solicitar correção</button><button disabled={busy} onClick={() => decidir("APROVADO")} className="inline-flex items-center gap-2 rounded-lg bg-ok px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"><CheckCircle2 size={15}/> Aprovar</button></footer>}
     </div>
-  );
+  </div>;
 }

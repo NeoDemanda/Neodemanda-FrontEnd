@@ -1,54 +1,40 @@
 import axios from "axios";
 
-/**
- * Em desenvolvimento, o Vite encaminha /api para o Spring Boot e remove
- * o prefixo /api, pois os controllers Java usam rotas como /auth/login.
- * Em produção, VITE_API_BASE_URL deve apontar diretamente para a origem da API.
- */
 const baseURL = import.meta.env.VITE_API_BASE_URL
   ? import.meta.env.VITE_API_BASE_URL.replace(/\/$/, "")
   : "/api";
 
 export const api = axios.create({
   baseURL,
-  timeout: 15000,
-  headers: {
-    "Content-Type": "application/json",
-  },
+  timeout: 20000,
+  headers: { "Content-Type": "application/json" },
 });
 
-api.interceptors.request.use((config) => {
-  const token = localStorageSafeGet("neodemanda:token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-api.interceptors.response.use(
-  (response) => response,
-  (error) => {
-    if (error?.response?.status === 401) {
-      console.warn("[api] Credenciais inválidas ou sessão não autenticada.");
-    }
-    return Promise.reject(error);
-  }
-);
-
-function localStorageSafeGet(key) {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
+// O backend atual autentica por sessão de login, mas ainda não emite JWT.
+// Não enviamos um Bearer fictício.
 export const endpoints = {
   login: "/auth/login",
   projects: "/projetos",
   project: (id) => `/projetos/${id}`,
-  calculate: (id) => `/projetos/${id}/calcular`,
-  dashboardSummary: "/dashboard/resumo",
+  calculate: (id) => `/projetos/${id}/calculo`,
+  submit: (id) => `/projetos/${id}/submissao`,
+  evaluate: (id) => `/projetos/${id}/avaliacao`,
+  evaluations: (id) => `/projetos/${id}/avaliacoes`,
+  archive: (id) => `/projetos/${id}/arquivar`,
+  health: "/health",
 };
+
+export function mensagemErro(error) {
+  const data = error?.response?.data;
+  if (data?.message) return data.message;
+  if (data?.detail) return data.detail;
+  if (data?.fields && typeof data.fields === "object") {
+    return Object.entries(data.fields).map(([campo, msg]) => `${campo}: ${msg}`).join("\n");
+  }
+  if (error?.response?.status === 404) return "Registro ou endpoint não encontrado (404).";
+  if (error?.response?.status === 409) return data?.error || "A operação não é permitida para o status atual do projeto.";
+  if (error?.code === "ERR_NETWORK") return "Não foi possível conectar à API. Verifique se o backend está rodando.";
+  return data?.error || error?.message || "Ocorreu um erro ao comunicar com o servidor.";
+}
 
 export default api;
