@@ -37,6 +37,10 @@ export async function exportProjectPdf(project, { projetista } = {}) {
     window.alert("Este projeto ainda não possui uma demanda calculada.");
     return;
   }
+  if (!Array.isArray(project.memorial) || project.memorial.length === 0) {
+    window.alert("O memorial de cálculo deste projeto não foi carregado do servidor. Recalcule o projeto e tente exportar novamente.");
+    return;
+  }
 
   const { jsPDF } = await import("jspdf");
   const logo = await carregarLogo();
@@ -184,7 +188,7 @@ export async function exportProjectPdf(project, { projetista } = {}) {
     doc.setFont("helvetica", opcoes.negrito ? "bold" : "normal");
     doc.setFontSize(9.5);
     cor(opcoes.cor ?? COR.texto);
-    const partes = doc.splitTextToSize(texto, W - 2 * M - 4);
+    const partes = doc.splitTextToSize(paraPdf(texto), W - 2 * M - 4);
     partes.forEach((parte) => {
       garantirEspaco(5.6);
       doc.text(parte, M + 2, y);
@@ -229,26 +233,60 @@ export async function exportProjectPdf(project, { projetista } = {}) {
   doc.text(categoria, W / 2 + 6, y + 20);
   y += 34;
 
-  // ---------- 3. Fórmula ----------
-  secao(3, "Fórmula e regra aplicada");
-  paragrafo("Conversão da demanda ativa para a demanda aparente:", { depois: 0.5 });
-  paragrafo("Demanda (kVA) = Demanda ativa (kW) / FP", { negrito: true, cor: COR.verde, depois: 0.5 });
-  paragrafo(`Demanda (kVA) = ${formatar(kw)} / ${fp.toFixed(2).replace(".", ",")} = ${formatar(kva)} kVA`, {
-    negrito: true,
-    cor: COR.verde,
-    depois: 4,
-  });
+  // ---------- 3. Fórmula e regra aplicada ----------
+  // Etapas da demanda residencial exatamente como o motor de cálculo (backend)
+  // as produziu: área útil (Quadro 35) → coincidência (Quadro 36) →
+  // segurança (Quadro 37) → demanda residencial final.
+  const passos = [...project.memorial].sort((a, b) => a.ordem - b.ordem);
+  const porId = (id) => passos.find((p) => p.idRegra === id);
 
-  // ---------- 4. Memorial ----------
-  secao(4, "Memorial básico do cálculo");
-  [
-    `1) Foram consideradas ${project.unidades ?? "--"} unidade(s) consumidora(s).`,
-    `2) A demanda consolidada para o projeto é de ${formatar(kva)} kVA.`,
-    `3) A parcela ativa equivalente é de ${formatar(kw)} kW, obtida por kVA x FP.`,
-    `4) O resultado é enquadrado conforme a faixa de demanda: ${categoria}.`,
-    "5) O projetista deve conferir os dados de entrada e as regras normativas antes da submissão à Neoenergia.",
-  ].forEach((t) => paragrafo(t));
-  y += 3;
+  const etapa = (passo, titulo) => {
+    garantirEspaco(22);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9.5);
+    cor(COR.verde);
+    doc.text(paraPdf(titulo), M + 2, y);
+    y += 5.4;
+    paragrafo(`Fórmula: ${passo.formulaSimbolica}`, { cor: COR.suave, depois: 0.2 });
+    paragrafo(passo.formulaAplicada, { depois: 0.2 });
+    if (passo.condicao) paragrafo(passo.condicao, { cor: COR.suave, depois: 0.2 });
+    paragrafo(`Resultado: ${resultadoDoPasso(passo)}`, { negrito: true, cor: COR.verde, depois: 0.2 });
+    const refs = (passo.referencias || []).map(referenciaTexto).filter(Boolean);
+    if (refs.length) paragrafo(`Referência: ${refs.join("; ")}`, { cor: COR.suave, depois: 0.2 });
+    y += 3;
+  };
+
+  const ETAPAS_RESIDENCIAIS = [
+    ["DR", "3.1 Demanda residencial inicial (obtida pela área útil)"],
+    ["FC", "3.2 Fator de coincidência aplicado"],
+    ["DTR", "3.3 Demanda residencial com coincidência"],
+    ["FR", "3.4 Fator de segurança aplicado"],
+    ["DRF", "3.5 Demanda residencial final"],
+  ];
+  secao(3, "Fórmula e regra aplicada");
+  const idsResidenciais = new Set();
+  ETAPAS_RESIDENCIAIS.forEach(([id, titulo]) => {
+    const passo = porId(id);
+    if (!passo) return;
+    idsResidenciais.add(id);
+    etapa(passo, titulo);
+  });
+  if (idsResidenciais.size === 0) {
+    paragrafo("Projeto sem unidades residenciais: não há etapas de demanda residencial a apresentar.", { cor: COR.suave });
+  }
+  y += 2;
+
+  // ---------- 4. Memorial do cálculo ----------
+  // Demais etapas do motor (áreas comuns, motores, ar-condicionado, recarga,
+  // enquadramento etc.), na ordem em que foram executadas.
+  secao(4, "Memorial do cálculo");
+  passos
+    .filter((p) => !idsResidenciais.has(p.idRegra))
+    .forEach((p) => etapa(p, `${p.ordem}. ${p.descricao}`));
+  paragrafo(
+    `Demanda de projeto: ${formatar(kva)} kVA (${formatar(kw)} kW com FP ${fp.toFixed(2).replace(".", ",")}) — ${categoria}.`,
+    { negrito: true, cor: COR.verde, depois: 4 }
+  );
 
   // ---------- 5. Observação ----------
   secao(5, "Observação técnica");
@@ -282,6 +320,31 @@ function categoriaPara(kva) {
   if (kva <= 22) return "Categoria T2 (Bifásico)";
   if (kva <= 75) return "Categoria T3 (Trifásico)";
   return "Subestação dedicada (> 75 kVA)";
+}
+
+const UNIDADES = { KVA: "kVA", KW: "kW", W: "W", A: "A", MM2: "mm²", M2: "m²", CV: "cv", PERCENTUAL: "%", ADIMENSIONAL: "" };
+
+// A fonte padrão do jsPDF (Helvetica/WinAnsi) não tem alguns símbolos que o
+// memorial do backend usa (∑, →, ≤, ≥); troca por equivalentes legíveis.
+function paraPdf(texto) {
+  return String(texto ?? "")
+    .replace(/∑/g, "soma")
+    .replace(/→/g, "->")
+    .replace(/≤/g, "<=")
+    .replace(/≥/g, ">=")
+    .replace(/−/g, "-");
+}
+
+function resultadoDoPasso(passo) {
+  if (passo.resultadoTexto) return passo.resultadoTexto;
+  const valor = Number(passo.valor);
+  const texto = Number.isFinite(valor) ? valor.toLocaleString("pt-BR", { maximumFractionDigits: 4 }) : "--";
+  return `${texto} ${UNIDADES[passo.unidade] ?? ""}`.trim();
+}
+
+function referenciaTexto(ref) {
+  if (!ref) return "";
+  return [ref.norma, ref.revisao && `rev. ${ref.revisao}`, ref.item].filter(Boolean).join(", ");
 }
 
 function dataBR(iso) {
