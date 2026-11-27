@@ -46,7 +46,8 @@ export function ProjectsProvider({ children }) {
         try {
           const calculo = await api.get(endpoints.calculate(projeto.id));
           const demanda = Number(calculo.data?.resultado?.dproj);
-          return { ...projeto, demandaCalculada: Number.isFinite(demanda) ? demanda : null };
+          const memorial = Array.isArray(calculo.data?.memorial) ? calculo.data.memorial : null;
+          return { ...projeto, demandaCalculada: Number.isFinite(demanda) ? demanda : null, memorial };
         } catch {
           return projeto;
         }
@@ -106,7 +107,7 @@ export function ProjectsProvider({ children }) {
 
   const calculateProject = useCallback(async (id, payload) => {
     const { data } = await api.post(endpoints.calculate(id), payload);
-    setProjects((current) => current.map((p) => p.id === Number(id) ? { ...p, demandaCalculada: Number(data?.resultado?.dproj ?? NaN) } : p));
+    setProjects((current) => current.map((p) => p.id === Number(id) ? { ...p, demandaCalculada: Number(data?.resultado?.dproj ?? NaN), memorial: Array.isArray(data?.memorial) ? data.memorial : null } : p));
     return data;
   }, []);
 

@@ -89,11 +89,10 @@ export default function CalculationPage() {
             <div><label className="field-label">Iluminação áreas comuns (W)</label><input className="field" type="number" min="0" step="0.01" value={form.iluminacaoAreasComunsW} onChange={(e) => update("iluminacaoAreasComunsW", e.target.value)} /></div>
             <div><label className="field-label">Tomadas áreas comuns (W)</label><input className="field" type="number" min="0" step="0.01" value={form.tomadasAreasComunsW} onChange={(e) => update("tomadasAreasComunsW", e.target.value)} /></div>
             <div><label className="field-label">Carga comercial (kW)</label><input className="field" type="number" min="0" step="0.01" value={form.cargaComercialKw} onChange={(e) => update("cargaComercialKw", e.target.value)} /></div>
-            <div className="flex flex-col justify-end gap-2"><label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" checked={form.clienteGrupoA} onChange={(e) => update("clienteGrupoA", e.target.checked)} /> Cliente Grupo A</label><label className="flex items-center gap-2 text-sm text-ink"><input type="checkbox" checked={form.condominioSmartStudio} onChange={(e) => update("condominioSmartStudio", e.target.checked)} /> Condomínio Smart Studio</label></div>
           </div>
         </section>
         {error && <p role="alert" className="whitespace-pre-line rounded-lg bg-bad-soft p-3 text-sm text-bad">{error}</p>}
-        <button disabled={busy} type="submit" className="btn-accent"><Calculator size={16}/>{busy ? "Calculando..." : "Calcular no backend"}</button>
+        <button disabled={busy} type="submit" className="btn-accent"><Calculator size={16}/>{busy ? "Calculando..." : "Calcular"}</button>
       </form>
       <aside className="space-y-5">
         <section className="card p-6">
